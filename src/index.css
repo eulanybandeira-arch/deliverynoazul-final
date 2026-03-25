@@ -112,24 +112,27 @@
   /* 1. Botões Ghost (Perfil, Sidebar, etc) - Sem bordas, fundo azul transparente no hover */
   .dark button[class*="ghost"],
   .dark [role="menuitem"],
-  .dark button.hover\:bg-muted\/50,
-  .dark [data-sidebar="menu-button"] {
+  .dark .hover\:bg-muted\/50, /* Seletor específico para o botão de perfil */
+  .dark [data-sidebar="menu-button"],
+  .dark [data-sidebar="trigger"] {
     border: none !important;
     background-color: transparent !important;
+    box-shadow: none !important;
     transition: background-color 0.2s ease;
   }
 
   .dark button[class*="ghost"]:hover,
-  .dark button.hover\:bg-muted\/50:hover,
+  .dark .hover\:bg-muted\/50:hover,
   .dark [data-sidebar="menu-button"]:hover,
-  .dark [data-sidebar="menu-button"][data-active="true"] {
+  .dark [data-sidebar="menu-button"][data-active="true"],
+  .dark [data-sidebar="trigger"]:hover {
     background-color: hsla(211, 100%, 35%, 0.25) !important; /* Azul primário transparente */
     color: white !important;
   }
 
   /* 2. Botões Vazados (Outline) e Padrão no Dark Mode */
   /* Forçamos texto branco e borda branca suave por padrão */
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]) {
+  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50) {
     @apply bg-transparent border-white/20 text-white transition-all duration-200;
   }
 
@@ -142,9 +145,9 @@
   }
 
   /* 3. Efeito ao Selecionar/Hover - Fica Azul Sólido (Cor Primária) */
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):hover,
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"])[data-state="open"],
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"])[data-active="true"] {
+  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50):hover,
+  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50)[data-state="open"],
+  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50)[data-active="true"] {
     background-color: hsl(var(--primary)) !important;
     border-color: hsl(var(--primary)) !important;
     color: white !important;
