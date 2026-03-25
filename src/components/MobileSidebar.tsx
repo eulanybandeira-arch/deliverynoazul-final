@@ -96,7 +96,7 @@ export function MobileSidebar() {
               {renderItem({ title: "Fornecedores", url: "/fornecedores", icon: Truck })}
               {renderItem({ title: "Inventário & Auditoria", url: "/inventario", icon: ClipboardCheck })}
               {renderItem({ title: "Lista de Compras", url: "/lista-compras", icon: ShoppingCart })}
-              {renderItem({ title: "Balanço de Estoque", url: "/balanco-estoque", icon: BarChart3 })}
+              {renderItem({ title: "Apuração de CMV", url: "/balanco-estoque", icon: BarChart3 })}
             </div>
 
             {/* FINANCEIRO E CUSTOS */}

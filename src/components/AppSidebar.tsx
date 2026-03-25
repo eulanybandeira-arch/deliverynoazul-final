@@ -105,7 +105,7 @@ export function AppSidebar() {
               {renderMenuItem({ title: "Fornecedores", url: "/fornecedores", icon: Truck })}
               {renderMenuItem({ title: "Inventário & Auditoria", url: "/inventario", icon: ClipboardCheck })}
               {renderMenuItem({ title: "Lista de Compras", url: "/lista-compras", icon: ShoppingCart })}
-              {renderMenuItem({ title: "Balanço de Estoque", url: "/balanco-estoque", icon: BarChart3 })}
+              {renderMenuItem({ title: "Apuração de CMV", url: "/balanco-estoque", icon: BarChart3 })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
