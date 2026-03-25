@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Plus, Edit, Trash2, Search, Filter } from "lucide-react";
 import { useRecipes } from "@/hooks/useRecipes";
 import { formatCurrency } from "@/utils/pricing";
