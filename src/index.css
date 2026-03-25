@@ -104,7 +104,7 @@
     @apply text-white;
   }
 
-  /* --- AJUSTE DE BOTÕES DARK MODE (REFERÊNCIA IMAGEM) --- */
+  /* --- AJUSTE DE BOTÕES DARK MODE --- */
 
   /* Botão Outline/Vazado no Dark Mode */
   .dark button.border-primary.text-primary {
@@ -113,18 +113,26 @@
     background-color: transparent !important;
   }
 
-  /* Estado de Hover/Seleção: Fica azul conforme solicitado */
-  .dark button.border-primary.text-primary:hover {
-    background-color: hsl(var(--primary)) !important;
-    border-color: hsl(var(--primary)) !important;
+  /* Estado de Hover/Seleção: Fica VERDE #2dceb6 conforme solicitado */
+  .dark button.border-primary.text-primary:hover,
+  .dark button.border-primary.text-primary:active {
+    background-color: #2dceb6 !important;
+    border-color: #2dceb6 !important;
     color: white !important;
   }
 
-  /* Botão Primário (Azul Sólido) - Mantém como na imagem */
+  /* Botão Primário (Azul Sólido) */
   .dark button.bg-primary:not(.border-primary) {
     background-color: hsl(var(--primary)) !important;
     color: white !important;
     border: none !important;
+  }
+
+  /* Botão Primário no Hover/Active: Fica VERDE #2dceb6 */
+  .dark button.bg-primary:not(.border-primary):hover,
+  .dark button.bg-primary:not(.border-primary):active {
+    background-color: #2dceb6 !important;
+    color: white !important;
   }
 
   /* --- SELEÇÕES DE MENU E PERFIL --- */
@@ -138,12 +146,12 @@
     color: hsl(var(--primary)) !important;
   }
 
-  /* Dark Mode */
+  /* Dark Mode - Seleções de menu também usam o verde no hover */
   .dark [data-sidebar="menu-button"]:hover,
   .dark [data-sidebar="menu-button"][data-active="true"],
   .dark button.hover\:bg-muted\/50:hover,
   .dark [role="menuitem"]:hover {
-    background-color: hsla(211, 100%, 35%, 0.25) !important;
+    background-color: rgba(45, 206, 182, 0.2) !important; /* Verde com transparência */
     color: white !important;
   }
 }
