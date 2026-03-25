@@ -26,9 +26,9 @@
     --success: 142.1 76.2% 36.3%;
     --success-foreground: 210 40% 98%;
     
-    /* Bordas mais visíveis no Light Mode */
-    --border: 214.3 31.8% 85%;
-    --input: 214.3 31.8% 85%;
+    /* Bordas mais escuras no Light Mode para visibilidade */
+    --border: 214.3 31.8% 80%;
+    --input: 214.3 31.8% 80%;
     
     --ring: 211 100% 18%;
     --radius: 0.5rem;
@@ -38,7 +38,7 @@
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 210 40% 96.1%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 85%;
+    --sidebar-border: 214.3 31.8% 80%;
     --sidebar-ring: 211 100% 18%;
     --metric-red: 0 84% 60%;
     --metric-cyan: 211 100% 18%;
@@ -106,47 +106,23 @@
     @apply text-white;
   }
 
-  .dark input, .dark textarea, .dark select {
-    @apply text-foreground placeholder:text-muted-foreground;
-  }
-
-  /* 1. Botões Ghost, Sidebar e Perfil - Azul transparente no hover/active */
-  .dark button[class*="ghost"]:hover,
-  .dark [role="menuitem"]:hover,
-  .dark .hover\:bg-muted\/50:hover,
-  .dark [data-sidebar="menu-button"]:hover,
-  .dark [data-sidebar="menu-button"][data-active="true"],
-  .dark [data-sidebar="trigger"]:hover {
-    border: none !important;
-    background-color: hsla(211, 100%, 35%, 0.25) !important;
-    color: white !important;
-    box-shadow: none !important;
-  }
-
-  /* 2. Botões de Ação (Primários, Outline, etc) no Dark Mode */
-  /* Forçamos o preenchimento azul e borda azul com letra branca */
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50) {
-    background-color: hsl(var(--primary)) !important;
-    border: 1px solid hsl(var(--primary)) !important;
-    color: white !important;
-    opacity: 1 !important;
-  }
-
-  /* Efeito de hover para os botões azuis no Dark Mode */
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50):hover {
-    filter: brightness(1.1);
-    box-shadow: 0 0 15px hsla(211, 100%, 35%, 0.4);
-  }
-
-  /* 3. Light Mode - Seleções e Hovers */
-  :root:not(.dark) button[class*="ghost"]:hover,
-  :root:not(.dark) [role="menuitem"]:hover,
-  :root:not(.dark) .hover\:bg-muted\/50:hover,
+  /* Ajuste de Seleção Azul (Sidebar e Perfil) */
+  
+  /* Light Mode */
   :root:not(.dark) [data-sidebar="menu-button"]:hover,
   :root:not(.dark) [data-sidebar="menu-button"][data-active="true"],
-  :root:not(.dark) [data-sidebar="trigger"]:hover {
-    border: none !important;
-    background-color: hsla(211, 100%, 18%, 0.08) !important;
+  :root:not(.dark) button.hover\:bg-muted\/50:hover,
+  :root:not(.dark) [role="menuitem"]:hover {
+    background-color: hsla(211, 100%, 18%, 0.1) !important;
     color: hsl(var(--primary)) !important;
+  }
+
+  /* Dark Mode */
+  .dark [data-sidebar="menu-button"]:hover,
+  .dark [data-sidebar="menu-button"][data-active="true"],
+  .dark button.hover\:bg-muted\/50:hover,
+  .dark [role="menuitem"]:hover {
+    background-color: hsla(211, 100%, 35%, 0.25) !important;
+    color: white !important;
   }
 }
