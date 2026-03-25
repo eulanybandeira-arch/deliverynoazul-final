@@ -5,15 +5,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, Search, Filter } from "lucide-react";
+import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { useRecipes } from "@/hooks/useRecipes";
 import { formatCurrency } from "@/utils/pricing";
 import { cn } from "@/lib/utils";
+import { RecipeWizardModal } from "@/components/recipes/RecipeWizardModal";
+import { toast } from "sonner";
 
 export default function Receitas() {
   const navigate = useNavigate();
-  const { recipes, loading, deleteRecipe } = useRecipes();
+  const { recipes, loading, deleteRecipe, saveRecipe } = useRecipes();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // Lógica de Engenharia de Cardápio (Matriz de Boston adaptada para Gastronomia)
   const analyzedRecipes = useMemo(() => {
@@ -25,17 +28,16 @@ export default function Receitas() {
       const cmv = price > 0 ? (unitCost / price) * 100 : 0;
       
       // Mock de popularidade (em um cenário real viria do volume de vendas)
-      // Usamos o ID para gerar uma distribuição consistente para o demo
-      const mockPopularity = (parseInt(recipe.id.slice(-1)) || 5) > 5 ? "Alta" : "Baixa";
-      const profitStatus = recipe.profitMargin >= 70 ? "Alto" : "Baixo";
+      const mockPopularity = (parseInt(recipe.id.slice(-1)) || 5) > 5 ? "Alta Venda" : "Baixa Venda";
+      const profitStatus = cmv <= 30 ? "Alto" : "Baixo";
 
       let status = { label: "Âncora", emoji: "⚓", color: "bg-slate-500/10 text-slate-600 border-slate-200" };
       
-      if (mockPopularity === "Alta" && profitStatus === "Alto") {
+      if (mockPopularity === "Alta Venda" && profitStatus === "Alto") {
         status = { label: "Tesouro", emoji: "👑", color: "bg-[#002B5B]/10 text-[#002B5B] border-[#002B5B]/20" };
-      } else if (mockPopularity === "Alta" && profitStatus === "Baixo") {
+      } else if (mockPopularity === "Alta Venda" && profitStatus === "Baixo") {
         status = { label: "Vela/Motor", emoji: "⛵", color: "bg-blue-400/10 text-blue-600 border-blue-200" };
-      } else if (mockPopularity === "Baixa" && profitStatus === "Alto") {
+      } else if (mockPopularity === "Baixa Venda" && profitStatus === "Alto") {
         status = { label: "Pérola Escondida", emoji: "🦪", color: "bg-emerald-500/10 text-emerald-600 border-emerald-200" };
       }
 
@@ -56,6 +58,37 @@ export default function Receitas() {
     };
   }, [analyzedRecipes]);
 
+  const handleSaveNewRecipe = async (data: any) => {
+    try {
+      const recipeToSave = {
+        name: data.name,
+        yield: data.yield,
+        profitMargin: ((data.price - data.unitCost) / data.unitCost) * 100,
+        ingredients: data.ingredients.map((ing: any) => ({
+          id: ing.id,
+          name: ing.name,
+          packageQty: 1, // Simplificado para o wizard
+          unit: ing.unit,
+          unitPrice: ing.cost / ing.quantity,
+          usedQty: ing.quantity,
+          usedValue: ing.cost,
+          inventoryItemId: ing.inventoryItemId
+        })),
+        packaging: [],
+        appFee: 0,
+        cardFee: 0,
+        taxFee: 0,
+        status: 'published'
+      };
+
+      await saveRecipe(recipeToSave as any);
+      toast.success("Ficha técnica salva com sucesso!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao salvar ficha técnica.");
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64 text-muted-foreground">Carregando engenharia de cardápio...</div>;
   }
@@ -69,7 +102,7 @@ export default function Receitas() {
           <p className="text-muted-foreground">Descubra os pratos que são tesouros e corte as âncoras que afundam o seu cardápio.</p>
         </div>
         <Button 
-          onClick={() => navigate("/receitas/new")} 
+          onClick={() => setIsWizardOpen(true)} 
           className="bg-[#002B5B] hover:bg-[#001f3f] text-white font-bold h-11 px-6 transition-all shadow-lg shadow-blue-900/20"
         >
           <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
@@ -220,6 +253,12 @@ export default function Receitas() {
           </Table>
         </CardContent>
       </Card>
+
+      <RecipeWizardModal 
+        open={isWizardOpen} 
+        onOpenChange={setIsWizardOpen}
+        onSave={handleSaveNewRecipe}
+      />
     </div>
   );
 }
