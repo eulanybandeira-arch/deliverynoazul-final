@@ -54,7 +54,6 @@
     --popover: 222 39% 23%;
     --popover-foreground: 210 40% 98%;
     
-    /* Revertido para Azul (tom ajustado para visibilidade no escuro) */
     --primary: 211 100% 35%; 
     --primary-foreground: 210 40% 98%;
     
@@ -94,15 +93,15 @@
     @apply bg-background text-foreground;
   }
 
+  /* Padronização Global de Títulos para Branco */
   h1 {
-    @apply text-primary font-bold;
+    @apply text-white font-bold;
   }
   
   h2 {
-    @apply text-primary font-semibold;
+    @apply text-white font-semibold;
   }
 
-  /* Revertido para padrão do tema */
   .dark input, .dark textarea, .dark select {
     @apply text-foreground placeholder:text-muted-foreground;
   }

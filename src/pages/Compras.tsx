@@ -36,7 +36,7 @@ export default function Compras() {
   const handleSaveInsumo = (data: Partial<Insumo>) => {
     if (editingInsumo) {
       setInsumos(prev => prev.map(i => i.id === editingInsumo.id ? { ...i, ...data } as Insumo : i));
-      toast.success("Insumo atualizado com sucesso!");
+      toast.success("Insumo updated successfully!");
     } else {
       const newInsumo: Insumo = {
         ...data,
@@ -44,7 +44,7 @@ export default function Compras() {
         avgCostUE: data.avgCostUE || 0,
       } as Insumo;
       setInsumos(prev => [newInsumo, ...prev]);
-      toast.success("Novo insumo cadastrado!");
+      toast.success("New ingredient registered!");
     }
     setEditingInsumo(null);
   };
@@ -61,7 +61,7 @@ export default function Compras() {
       isActiveCMV: true,
     }));
     setInsumos(prev => [...newInsumos, ...prev]);
-    toast.success(`${newInsumos.length} insumos importados com sucesso!`);
+    toast.success(`${newInsumos.length} ingredients imported successfully!`);
   };
 
   const handleEdit = (insumo: Insumo) => {
@@ -71,7 +71,7 @@ export default function Compras() {
 
   const handleDelete = (id: string) => {
     setInsumos(prev => prev.filter(i => i.id !== id));
-    toast.error("Insumo removido.");
+    toast.error("Ingredient removed.");
   };
 
   return (
