@@ -110,8 +110,6 @@
     @apply text-foreground placeholder:text-muted-foreground;
   }
 
-  /* Estilização Customizada de Botões e Seleções */
-
   /* 1. Botões Ghost, Sidebar e Perfil - Azul transparente no hover/active */
   
   /* Dark Mode */
@@ -136,30 +134,30 @@
   :root:not(.dark) [data-sidebar="menu-button"][data-active="true"],
   :root:not(.dark) [data-sidebar="trigger"]:hover {
     border: none !important;
-    background-color: hsla(211, 100%, 18%, 0.08) !important; /* Azul primário suave */
+    background-color: hsla(211, 100%, 18%, 0.08) !important;
     color: hsl(var(--primary)) !important;
     box-shadow: none !important;
     transition: background-color 0.2s ease;
   }
 
-  /* 2. Botões Vazados (Outline) e Padrão no Dark Mode */
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50) {
+  /* 2. Botões Vazados (Outline) no Dark Mode */
+  /* Devem ter borda branca e texto branco por padrão */
+  .dark button[class*="outline"] {
     @apply bg-transparent border-white/20 text-white transition-all duration-200;
   }
 
-  .dark button.text-primary:not(:hover) {
-    color: white !important;
-  }
-  .dark button.border-primary:not(:hover) {
-    border-color: rgba(255, 255, 255, 0.2) !important;
-  }
-
-  /* 3. Efeito ao Selecionar/Hover - Fica Azul Sólido (Cor Primária) */
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50):hover,
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50)[data-state="open"],
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50)[data-active="true"] {
+  /* No hover, os vazados ficam azuis sólidos */
+  .dark button[class*="outline"]:hover {
     background-color: hsl(var(--primary)) !important;
     border-color: hsl(var(--primary)) !important;
     color: white !important;
+  }
+
+  /* 3. Botões Primários (Default) no Dark Mode */
+  /* Mantêm o fundo azul sólido e texto branco */
+  .dark button:not([class*="ghost"]):not([class*="outline"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50) {
+    background-color: hsl(var(--primary));
+    color: white;
+    border: none;
   }
 }
