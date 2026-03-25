@@ -1,0 +1,1 @@
+ALTER TABLE public.recipe_channel_pricing ADD COLUMN is_active boolean NOT NULL DEFAULT true;

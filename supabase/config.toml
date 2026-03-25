@@ -1,0 +1,19 @@
+project_id = "jxqbobzjglbcuftatbpm"
+
+[functions.check-notifications]
+verify_jwt = false
+
+[functions.chat]
+verify_jwt = false
+
+[functions.extract-from-image]
+verify_jwt = false
+
+[functions.extract-recipe]
+verify_jwt = false
+
+[functions.extract-document-text]
+verify_jwt = false
+
+[functions.read-scale-image]
+verify_jwt = false
