@@ -96,6 +96,10 @@ export default function InventoryBalance() {
     setIsCalculated(true);
   };
 
+  const formatPercent = (value: number) => {
+    return value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 w-full px-2">
       <header className="space-y-1">
@@ -171,26 +175,18 @@ export default function InventoryBalance() {
           {/* 2. O Diagnóstico Visual */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
             <Card className={cn(
-              "md:col-span-1 shadow-lg transition-all duration-500 flex flex-col justify-center items-center p-8 min-h-[220px]",
-              diagnosis.isSuccess 
-                ? "bg-[#002B5B] text-white border-none dark:bg-card dark:border-[#002B5B] dark:border-2" 
-                : "bg-[#991b1b] text-white border-none dark:bg-card dark:border-[#991b1b] dark:border-2"
+              "md:col-span-1 shadow-lg transition-all duration-500 flex flex-col justify-center items-center p-8 min-h-[220px] text-white border-none",
+              diagnosis.isSuccess ? "bg-[#002B5B]" : "bg-[#991b1b]"
             )}>
               <div className="text-center space-y-2">
-                <p className={cn(
-                  "text-[10px] font-bold uppercase tracking-[0.2em] opacity-80",
-                  diagnosis.isSuccess ? "dark:text-[#002B5B]" : "dark:text-[#991b1b]"
-                )}>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">
                   CMV Real do Período
                 </p>
-                <div className={cn(
-                  "text-6xl font-black tracking-tighter",
-                  diagnosis.isSuccess ? "dark:text-[#002B5B]" : "dark:text-[#991b1b]"
-                )}>
-                  {diagnosis.realCMV_Percent.toFixed(1)}%
+                <div className="text-6xl font-black tracking-tighter">
+                  {formatPercent(diagnosis.realCMV_Percent)}
                 </div>
-                <p className="text-xs font-bold uppercase tracking-wider bg-white/20 dark:bg-muted py-1 px-3 rounded-full inline-block">
-                  Meta: {diagnosis.targetNum.toFixed(1)}%
+                <p className="text-xs font-bold uppercase tracking-wider bg-white/20 py-1 px-3 rounded-full inline-block">
+                  Meta: {formatPercent(diagnosis.targetNum)}
                 </p>
               </div>
               <div className="mt-4">
@@ -222,13 +218,15 @@ export default function InventoryBalance() {
               <CardHeader className="pb-2">
                 <CardDescription className="text-[10px] font-bold uppercase tracking-wider">Sua Meta vs. Real</CardDescription>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-muted-foreground">{diagnosis.targetNum.toFixed(1)}%</span>
+                  <span className="text-2xl font-bold text-muted-foreground dark:text-gray-200">
+                    {formatPercent(diagnosis.targetNum)}
+                  </span>
                   <span className="text-sm text-muted-foreground">vs.</span>
                   <span className={cn(
                     "text-2xl font-bold", 
-                    diagnosis.isSuccess ? "text-[#002B5B]" : "text-[#991b1b]"
+                    diagnosis.isSuccess ? "text-[#002B5B] dark:text-white" : "text-[#991b1b] dark:text-white"
                   )}>
-                    {diagnosis.realCMV_Percent.toFixed(1)}%
+                    {formatPercent(diagnosis.realCMV_Percent)}
                   </span>
                 </div>
               </CardHeader>
