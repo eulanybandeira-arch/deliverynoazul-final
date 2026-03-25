@@ -254,14 +254,14 @@ export default function InventoryBalance() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-background/95 backdrop-blur z-10">
                     <TableRow className="hover:bg-transparent border-b border-border/40">
-                      <TableHead className="text-[10px] font-bold uppercase py-4">Insumo</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase">Categoria</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-right">Est. Inicial (R$)</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-right">Entradas (R$)</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-right">Est. Final (R$)</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-right">Saídas (R$)</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-right">Custo Médio</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-right">% Repres.</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase py-4 whitespace-nowrap">Insumo</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase whitespace-nowrap">Categoria</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-right whitespace-nowrap">Estoque Inicial (R$)</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-right whitespace-nowrap">Entradas (R$)</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-right whitespace-nowrap">Estoque Final (R$)</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-right whitespace-nowrap">Saídas (R$)</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-right whitespace-nowrap">Custo Médio</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-right whitespace-nowrap">% de Representatividade</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -272,25 +272,25 @@ export default function InventoryBalance() {
 
                       return (
                         <TableRow key={item.id} className="hover:bg-muted/30 transition-colors border-b border-border/20">
-                          <TableCell className="py-4 font-semibold text-sm">{item.name}</TableCell>
-                          <TableCell>
+                          <TableCell className="py-4 font-semibold text-sm whitespace-nowrap">{item.name}</TableCell>
+                          <TableCell className="whitespace-nowrap">
                             <Badge variant="outline" className="text-[9px] uppercase font-bold tracking-tighter">
                               {item.category_logistics}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs">{formatCurrency(item.estInicialR$)}</TableCell>
-                          <TableCell className="text-right font-mono text-xs text-blue-600">+{formatCurrency(item.entradasR$)}</TableCell>
-                          <TableCell className="text-right font-mono text-xs">{formatCurrency(item.estFinalR$)}</TableCell>
+                          <TableCell className="text-right font-mono text-xs whitespace-nowrap">{formatCurrency(item.estInicialR$)}</TableCell>
+                          <TableCell className="text-right font-mono text-xs text-blue-600 whitespace-nowrap">+{formatCurrency(item.entradasR$)}</TableCell>
+                          <TableCell className="text-right font-mono text-xs whitespace-nowrap">{formatCurrency(item.estFinalR$)}</TableCell>
                           <TableCell className={cn(
-                            "text-right font-bold text-xs",
+                            "text-right font-bold text-xs whitespace-nowrap",
                             item.saidasR$ < 0 ? "text-red-600" : "text-foreground"
                           )}>
                             {formatCurrency(item.saidasR$)}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                          <TableCell className="text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
                             {formatCurrency(item.custoMedio)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right whitespace-nowrap">
                             <span className="text-xs font-bold text-primary">
                               {representativity.toFixed(1)}%
                             </span>
