@@ -25,8 +25,11 @@
     --destructive-foreground: 210 40% 98%;
     --success: 142.1 76.2% 36.3%;
     --success-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    
+    /* Bordas mais visíveis no Light Mode */
+    --border: 214.3 31.8% 85%;
+    --input: 214.3 31.8% 85%;
+    
     --ring: 211 100% 18%;
     --radius: 0.5rem;
     --sidebar-background: 210 40% 98%;
@@ -35,7 +38,7 @@
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 210 40% 96.1%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-border: 214.3 31.8% 85%;
     --sidebar-ring: 211 100% 18%;
     --metric-red: 0 84% 60%;
     --metric-cyan: 211 100% 18%;
@@ -107,36 +110,43 @@
     @apply text-foreground placeholder:text-muted-foreground;
   }
 
-  /* Estilização Customizada de Botões para Dark Mode */
+  /* Estilização Customizada de Botões e Seleções */
 
-  /* 1. Botões Ghost (Perfil, Sidebar, etc) - Sem bordas, fundo azul transparente no hover */
-  .dark button[class*="ghost"],
-  .dark [role="menuitem"],
-  .dark .hover\:bg-muted\/50, /* Seletor específico para o botão de perfil */
-  .dark [data-sidebar="menu-button"],
-  .dark [data-sidebar="trigger"] {
-    border: none !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
-    transition: background-color 0.2s ease;
-  }
-
+  /* 1. Botões Ghost, Sidebar e Perfil - Azul transparente no hover/active */
+  
+  /* Dark Mode */
   .dark button[class*="ghost"]:hover,
+  .dark [role="menuitem"]:hover,
   .dark .hover\:bg-muted\/50:hover,
   .dark [data-sidebar="menu-button"]:hover,
   .dark [data-sidebar="menu-button"][data-active="true"],
   .dark [data-sidebar="trigger"]:hover {
-    background-color: hsla(211, 100%, 35%, 0.25) !important; /* Azul primário transparente */
+    border: none !important;
+    background-color: hsla(211, 100%, 35%, 0.25) !important;
     color: white !important;
+    box-shadow: none !important;
+    transition: background-color 0.2s ease;
+  }
+
+  /* Light Mode */
+  :root:not(.dark) button[class*="ghost"]:hover,
+  :root:not(.dark) [role="menuitem"]:hover,
+  :root:not(.dark) .hover\:bg-muted\/50:hover,
+  :root:not(.dark) [data-sidebar="menu-button"]:hover,
+  :root:not(.dark) [data-sidebar="menu-button"][data-active="true"],
+  :root:not(.dark) [data-sidebar="trigger"]:hover {
+    border: none !important;
+    background-color: hsla(211, 100%, 18%, 0.08) !important; /* Azul primário suave */
+    color: hsl(var(--primary)) !important;
+    box-shadow: none !important;
+    transition: background-color 0.2s ease;
   }
 
   /* 2. Botões Vazados (Outline) e Padrão no Dark Mode */
-  /* Forçamos texto branco e borda branca suave por padrão */
   .dark button:not([class*="ghost"]):not([class*="link"]):not([data-sidebar="menu-button"]):not(.hover\:bg-muted\/50) {
     @apply bg-transparent border-white/20 text-white transition-all duration-200;
   }
 
-  /* Sobrescreve classes utilitárias de cor primária para manter o padrão branco no estado inicial */
   .dark button.text-primary:not(:hover) {
     color: white !important;
   }
