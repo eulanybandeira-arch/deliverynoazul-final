@@ -53,9 +53,10 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   const [packaging, setPackaging] = useState<RecipeItem[]>([]);
   const [instructions, setInstructions] = useState("");
   
-  // Busca e Adição
+  // Estados da Barra de Adição Inteligente
   const [searchTerm, setSearchTerm] = useState("");
   const [searchQty, setSearchQty] = useState("1");
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showResults, setShowResults] = useState(false);
 
   // Precificação
@@ -66,6 +67,11 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   const totalIngredientsCost = useMemo(() => ingredients.reduce((sum, i) => sum + i.cost, 0), [ingredients]);
   const totalPackagingCost = useMemo(() => packaging.reduce((sum, i) => sum + i.cost, 0), [packaging]);
   const totalRecipeCost = totalIngredientsCost + totalPackagingCost;
+
+  const previewCost = useMemo(() => {
+    if (!selectedItem) return 0;
+    return (parseFloat(searchQty) || 0) * selectedItem.unitPrice;
+  }, [selectedItem, searchQty]);
 
   const suggestedPrice = useMemo(() => {
     const cmv = parseFloat(targetCmv) || 30;
@@ -87,15 +93,25 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   }, [realCmv]);
 
   // Handlers
-  const handleAddItem = (item: any, isPackaging: boolean = false) => {
+  const handleSelectItem = (item: any) => {
+    setSelectedItem(item);
+    setSearchTerm(item.name);
+    setShowResults(false);
+  };
+
+  const handleAddItem = (isPackaging: boolean = false) => {
+    if (!selectedItem) {
+      toast.error("Selecione um item primeiro.");
+      return;
+    }
     const qty = parseFloat(searchQty) || 1;
     const newItem: RecipeItem = {
       id: crypto.randomUUID(),
-      name: item.name,
+      name: selectedItem.name,
       quantity: qty,
-      unit: item.unit,
-      unitPrice: item.unitPrice,
-      cost: qty * item.unitPrice
+      unit: selectedItem.unit,
+      unitPrice: selectedItem.unitPrice,
+      cost: qty * selectedItem.unitPrice
     };
 
     if (isPackaging) setPackaging([...packaging, newItem]);
@@ -103,8 +119,21 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
     
     setSearchTerm("");
     setSearchQty("1");
-    setShowResults(false);
-    toast.success(`${item.name} adicionado.`);
+    setSelectedItem(null);
+    toast.success(`${selectedItem.name} adicionado.`);
+  };
+
+  const updateItemQty = (id: string, newQty: string, isPackaging: boolean) => {
+    const qty = parseFloat(newQty) || 0;
+    const setter = isPackaging ? setPackaging : setIngredients;
+    const list = isPackaging ? packaging : ingredients;
+
+    setter(list.map(item => {
+      if (item.id === id) {
+        return { ...item, quantity: qty, cost: qty * item.unitPrice };
+      }
+      return item;
+    }));
   };
 
   const handlePriceChange = (value: string) => {
@@ -124,14 +153,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
       return;
     }
     onSave({
-      name,
-      yieldAmount,
-      yieldUnit,
-      ingredients,
-      packaging,
-      instructions,
-      targetCmv,
-      appliedPrice
+      name, yieldAmount, yieldUnit, ingredients, packaging, instructions, targetCmv, appliedPrice
     });
     onOpenChange(false);
   };
@@ -209,42 +231,58 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
           <div className="flex-1 overflow-y-auto p-6">
             {/* Aba 1: Composição */}
             <TabsContent value="composicao" className="m-0 space-y-6">
-              <div className="flex gap-3 items-end">
+              {/* Barra de Adição Inteligente */}
+              <div className="flex items-end gap-2 bg-muted/20 p-3 rounded-xl border border-border/50">
                 <div className="flex-1 relative">
-                  <Label className="text-[10px] font-bold uppercase mb-1.5 block">Buscar Insumo</Label>
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Buscar Insumo / Base</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                      placeholder="Ex: Pão, Carne..." 
+                      placeholder="Digite o nome..." 
                       value={searchTerm}
                       onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }}
-                      className="pl-10"
+                      className="pl-10 h-10"
                     />
                   </div>
-                  
                   {showResults && searchTerm && (
                     <div className="absolute z-50 w-full bg-popover border rounded-xl shadow-2xl mt-1 overflow-hidden">
                       {MOCK_INSUMOS.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
                         <button 
                           key={item.id} 
                           className="w-full flex items-center justify-between px-4 py-3 hover:bg-accent text-left transition-colors border-b last:border-0"
-                          onClick={() => handleAddItem(item)}
+                          onClick={() => handleSelectItem(item)}
                         >
-                          <div className="flex items-center gap-3">
-                            <Package className="h-4 w-4 text-blue-400" />
-                            <span className="text-sm font-bold">{item.name}</span>
-                          </div>
+                          <span className="text-sm font-bold">{item.name}</span>
                           <span className="text-xs font-mono text-muted-foreground">{formatCurrency(item.unitPrice)} / {item.unit}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                <div className="w-24">
-                  <Label className="text-[10px] font-bold uppercase mb-1.5 block">Qtd.</Label>
-                  <Input type="number" value={searchQty} onChange={(e) => setSearchQty(e.target.value)} />
+                
+                <div className="w-32">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Qtd.</Label>
+                  <div className="flex">
+                    <Input 
+                      type="number" 
+                      value={searchQty} 
+                      onChange={(e) => setSearchQty(e.target.value)} 
+                      className="rounded-r-none h-10 text-center font-bold"
+                    />
+                    <div className="h-10 px-3 flex items-center justify-center bg-muted border border-l-0 rounded-r-md text-[10px] font-black uppercase text-muted-foreground shrink-0 min-w-[40px]">
+                      {selectedItem?.unit || "-"}
+                    </div>
+                  </div>
                 </div>
-                <Button className="bg-[#002B5B] hover:bg-[#001f3f]">
+
+                <div className="w-32">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Custo Prévio</Label>
+                  <div className="h-10 px-3 flex items-center justify-end bg-muted/50 border rounded-md font-mono text-sm font-bold text-[#002B5B]">
+                    {formatCurrency(previewCost)}
+                  </div>
+                </div>
+
+                <Button onClick={() => handleAddItem(false)} className="bg-[#002B5B] hover:bg-[#001f3f] h-10 px-6">
                   <Plus className="h-4 w-4 mr-2" /> Adicionar
                 </Button>
               </div>
@@ -254,7 +292,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                   <TableHeader className="bg-muted/30">
                     <TableRow>
                       <TableHead className="text-[10px] font-bold uppercase">Item</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-center">Qtd. Usada</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-center w-40">Qtd. Usada</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase text-right">Custo</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
@@ -266,10 +304,18 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                       ingredients.map((ing) => (
                         <TableRow key={ing.id}>
                           <TableCell className="font-medium">{ing.name}</TableCell>
-                          <TableCell className="text-center">
-                            <span className="text-sm">{ing.quantity} {ing.unit}</span>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-2">
+                              <Input 
+                                type="number" 
+                                value={ing.quantity} 
+                                onChange={(e) => updateItemQty(ing.id, e.target.value, false)}
+                                className="w-24 h-8 text-center font-bold" 
+                              />
+                              <span className="text-[10px] font-bold uppercase text-muted-foreground w-8">{ing.unit}</span>
+                            </div>
                           </TableCell>
-                          <TableCell className="text-right font-mono">{formatCurrency(ing.cost)}</TableCell>
+                          <TableCell className="text-right font-mono font-bold text-[#002B5B]">{formatCurrency(ing.cost)}</TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" onClick={() => setIngredients(ingredients.filter(i => i.id !== ing.id))}>
                               <Trash2 className="h-4 w-4 text-destructive" />
@@ -292,37 +338,58 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                 </p>
               </div>
 
-              <div className="flex gap-3 items-end">
+              {/* Barra de Adição Inteligente (Embalagens) */}
+              <div className="flex items-end gap-2 bg-muted/20 p-3 rounded-xl border border-border/50">
                 <div className="flex-1 relative">
-                  <Label className="text-[10px] font-bold uppercase mb-1.5 block">Buscar Embalagem</Label>
-                  <Input 
-                    placeholder="Ex: Caixa, Sacola..." 
-                    value={searchTerm}
-                    onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }}
-                  />
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Buscar Embalagem</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Digite o nome..." 
+                      value={searchTerm}
+                      onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }}
+                      className="pl-10 h-10"
+                    />
+                  </div>
                   {showResults && searchTerm && (
                     <div className="absolute z-50 w-full bg-popover border rounded-xl shadow-2xl mt-1 overflow-hidden">
                       {MOCK_EMBALAGENS.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
                         <button 
                           key={item.id} 
                           className="w-full flex items-center justify-between px-4 py-3 hover:bg-accent text-left transition-colors border-b last:border-0"
-                          onClick={() => handleAddItem(item, true)}
+                          onClick={() => handleSelectItem(item)}
                         >
-                          <div className="flex items-center gap-3">
-                            <Package className="h-4 w-4 text-blue-400" />
-                            <span className="text-sm font-bold">{item.name}</span>
-                          </div>
+                          <span className="text-sm font-bold">{item.name}</span>
                           <span className="text-xs font-mono text-muted-foreground">{formatCurrency(item.unitPrice)} / {item.unit}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                <div className="w-24">
-                  <Label className="text-[10px] font-bold uppercase mb-1.5 block">Qtd.</Label>
-                  <Input type="number" value={searchQty} onChange={(e) => setSearchQty(e.target.value)} />
+                
+                <div className="w-32">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Qtd.</Label>
+                  <div className="flex">
+                    <Input 
+                      type="number" 
+                      value={searchQty} 
+                      onChange={(e) => setSearchQty(e.target.value)} 
+                      className="rounded-r-none h-10 text-center font-bold"
+                    />
+                    <div className="h-10 px-3 flex items-center justify-center bg-muted border border-l-0 rounded-r-md text-[10px] font-black uppercase text-muted-foreground shrink-0 min-w-[40px]">
+                      {selectedItem?.unit || "-"}
+                    </div>
+                  </div>
                 </div>
-                <Button className="bg-[#002B5B] hover:bg-[#001f3f]">
+
+                <div className="w-32">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Custo Prévio</Label>
+                  <div className="h-10 px-3 flex items-center justify-end bg-muted/50 border rounded-md font-mono text-sm font-bold text-[#002B5B]">
+                    {formatCurrency(previewCost)}
+                  </div>
+                </div>
+
+                <Button onClick={() => handleAddItem(true)} className="bg-[#002B5B] hover:bg-[#001f3f] h-10 px-6">
                   <Plus className="h-4 w-4 mr-2" /> Adicionar
                 </Button>
               </div>
@@ -332,7 +399,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                   <TableHeader className="bg-muted/30">
                     <TableRow>
                       <TableHead className="text-[10px] font-bold uppercase">Embalagem</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-center">Qtd.</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-center w-40">Qtd.</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase text-right">Custo</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
@@ -344,10 +411,18 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                       packaging.map((pkg) => (
                         <TableRow key={pkg.id}>
                           <TableCell className="font-medium">{pkg.name}</TableCell>
-                          <TableCell className="text-center">
-                            <span className="text-sm">{pkg.quantity} {pkg.unit}</span>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-2">
+                              <Input 
+                                type="number" 
+                                value={pkg.quantity} 
+                                onChange={(e) => updateItemQty(pkg.id, e.target.value, true)}
+                                className="w-24 h-8 text-center font-bold" 
+                              />
+                              <span className="text-[10px] font-bold uppercase text-muted-foreground w-8">{pkg.unit}</span>
+                            </div>
                           </TableCell>
-                          <TableCell className="text-right font-mono">{formatCurrency(pkg.cost)}</TableCell>
+                          <TableCell className="text-right font-mono font-bold text-[#002B5B]">{formatCurrency(pkg.cost)}</TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" onClick={() => setPackaging(packaging.filter(p => p.id !== pkg.id))}>
                               <Trash2 className="h-4 w-4 text-destructive" />
