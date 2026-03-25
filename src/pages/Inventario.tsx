@@ -106,8 +106,10 @@ export default function Inventario() {
           <Button 
             variant={activeAction === "new" ? "default" : "outline"} 
             className={cn(
-              "gap-2 rounded-xl",
-              activeAction === "new" ? "bg-primary hover:bg-primary/90 shadow-lg" : "border-primary text-primary hover:bg-primary/5"
+              "gap-2 rounded-xl transition-colors",
+              activeAction === "new" 
+                ? "bg-[#2dceb6] hover:bg-[#26b39e] text-white shadow-lg border-transparent" 
+                : "border-primary text-primary hover:bg-[#2dceb6] hover:border-[#2dceb6] hover:text-white"
             )}
             onClick={() => setActiveAction("new")}
           >
@@ -116,8 +118,10 @@ export default function Inventario() {
           <Button 
             variant={activeAction === "finalize" ? "default" : "outline"}
             className={cn(
-              "gap-2 rounded-xl font-bold",
-              activeAction === "finalize" ? "bg-primary hover:bg-primary/90 shadow-lg" : "border-primary text-primary hover:bg-primary/5"
+              "gap-2 rounded-xl font-bold transition-colors",
+              activeAction === "finalize" 
+                ? "bg-[#2dceb6] hover:bg-[#26b39e] text-white shadow-lg border-transparent" 
+                : "border-primary text-primary hover:bg-[#2dceb6] hover:border-[#2dceb6] hover:text-white"
             )}
             onClick={handleFinalize}
           >

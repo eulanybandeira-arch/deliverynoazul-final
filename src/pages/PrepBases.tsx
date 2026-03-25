@@ -96,7 +96,11 @@ export default function PrepBases() {
           </Select>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setLabelItem({} as PrepBase)}>
+          <Button 
+            variant="outline" 
+            onClick={() => setLabelItem({} as PrepBase)}
+            className="hover:bg-[#2dceb6] hover:border-[#2dceb6] hover:text-white transition-colors"
+          >
             <Tag className="mr-2 h-4 w-4" />
             Nova Etiqueta
           </Button>
@@ -105,6 +109,7 @@ export default function PrepBases() {
               setEditingItem(null);
               setShowForm(true);
             }}
+            className="hover:bg-[#2dceb6] border-transparent transition-colors"
           >
             <Plus className="mr-2 h-4 w-4" />
             Nova Receita

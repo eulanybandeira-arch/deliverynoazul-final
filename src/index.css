@@ -104,22 +104,9 @@
     @apply text-white;
   }
 
-  /* --- AJUSTE EXCLUSIVO PARA BOTÕES DE AÇÃO AZUIS NO DARK MODE --- */
-
-  /* Botão Vazado (Outline) - Remove o azul neon e coloca borda suave */
-  .dark button.border-primary.text-primary {
+  /* Correção de legibilidade para botões vazados no Dark Mode */
+  .dark button.border-primary.text-primary:not(:hover) {
     border-color: hsl(var(--muted-foreground) / 0.4) !important;
-    color: white !important;
-    background-color: transparent !important;
-  }
-
-  /* Interação (Hover/Active) - Fica VERDE #2dceb6 apenas nestes botões */
-  .dark button.border-primary.text-primary:hover,
-  .dark button.border-primary.text-primary:active,
-  .dark button.bg-primary:not(.border-primary):hover,
-  .dark button.bg-primary:not(.border-primary):active {
-    background-color: #2dceb6 !important;
-    border-color: #2dceb6 !important;
     color: white !important;
   }
 }

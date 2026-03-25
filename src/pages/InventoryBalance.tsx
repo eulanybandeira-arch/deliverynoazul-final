@@ -162,7 +162,7 @@ export default function InventoryBalance() {
 
             <Button 
               onClick={handleCalculate} 
-              className="h-10 bg-[#002B5B] hover:bg-[#001f3f] text-white font-bold transition-colors"
+              className="h-10 bg-[#002B5B] hover:bg-[#2dceb6] text-white font-bold transition-colors"
             >
               Calcular Diagnóstico
             </Button>
