@@ -11,77 +11,82 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
     
-    /* Azul Encorpado #002B5B */
+    /* Azul Principal #002B5B */
     --primary: 211 100% 18%;
     --primary-foreground: 210 40% 98%;
     
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
+    --secondary: 211 100% 96%;
+    --secondary-foreground: 211 100% 18%;
+    --muted: 211 30% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    
+    /* Seleção Azul Intensa no Light Mode */
+    --accent: 211 100% 94%;
+    --accent-foreground: 211 100% 18%;
+    
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --success: 142.1 76.2% 36.3%;
     --success-foreground: 210 40% 98%;
     
-    --border: 214.3 31.8% 80%;
-    --input: 214.3 31.8% 80%;
+    --border: 214.3 31.8% 91%;
+    --input: 214.3 31.8% 91%;
     
     --ring: 211 100% 18%;
-    --radius: 0.5rem;
-    --sidebar-background: 210 40% 98%;
+    --radius: 0.75rem;
+
+    /* Sidebar Light */
+    --sidebar-background: 210 40% 99%;
     --sidebar-foreground: 222.2 84% 4.9%;
     --sidebar-primary: 211 100% 18%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 80%;
+    --sidebar-accent: 211 100% 94%;
+    --sidebar-accent-foreground: 211 100% 18%;
+    --sidebar-border: 214.3 31.8% 91%;
     --sidebar-ring: 211 100% 18%;
+
     --metric-red: 0 84% 60%;
     --metric-cyan: 211 100% 18%;
     --metric-gold: 45 86% 53%;
     --metric-orange: 24 95% 53%;
-
-    --brand-cyan: 211 100% 18%;
-    --brand-royal: 211 100% 18%;
   }
  
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
-    --card: 222 39% 23%;
+    --card: 222 47% 13%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 39% 23%;
+    --popover: 222 47% 13%;
     --popover-foreground: 210 40% 98%;
     
     --primary: 211 100% 35%; 
     --primary-foreground: 210 40% 98%;
     
-    --secondary: 222 31% 29%;
+    --secondary: 222 47% 16%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 222 31% 29%;
+    --muted: 222 47% 16%;
     --muted-foreground: 215 20% 65%;
     
-    --accent: 211 100% 35%;
+    /* Seleção Azul Suave no Dark Mode (conforme imagem) */
+    --accent: 211 100% 15%;
     --accent-foreground: 210 40% 98%;
     
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
     --success: 142.1 70.6% 45.3%;
     --success-foreground: 210 40% 98%;
-    --border: 222 31% 29%;
-    --input: 222 31% 29%;
+    --border: 222 47% 18%;
+    --input: 222 47% 18%;
     --ring: 211 100% 35%;
     
+    /* Sidebar Dark */
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 211 100% 35%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 222 31% 29%;
+    --sidebar-accent: 211 100% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 31% 29%;
+    --sidebar-border: 222 47% 18%;
     --sidebar-ring: 211 100% 35%;
   }
 }
@@ -95,18 +100,11 @@
     @apply bg-background text-foreground;
   }
 
-  /* Títulos */
   h1, h2 {
     @apply text-primary font-bold;
   }
   
   .dark h1, .dark h2 {
     @apply text-white;
-  }
-
-  /* Correção de legibilidade para botões vazados no Dark Mode */
-  .dark button.border-primary.text-primary:not(:hover) {
-    border-color: hsl(var(--muted-foreground) / 0.4) !important;
-    color: white !important;
   }
 }
