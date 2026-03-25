@@ -51,6 +51,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   const [name, setName] = useState("");
   const [yieldAmount, setYieldAmount] = useState("1");
   const [yieldUnit, setYieldUnit] = useState("Porção");
+  const [salesVolume, setSalesVolume] = useState("Alta Venda");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,16 +76,12 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   const totalPackagingCost = useMemo(() => packaging.reduce((sum, i) => sum + i.cost, 0), [packaging]);
   const totalRecipeCost = totalIngredientsCost + totalPackagingCost;
 
-  // Lógica de Custo Prévio com Conversão Básica
   const previewCost = useMemo(() => {
     if (!selectedItem) return 0;
     const qty = parseFloat(searchQty) || 0;
     let price = selectedItem.unitPrice;
-
-    // Conversão simples para o mock
     if (selectedItem.unit === "kg" && searchUnit === "g") price = price / 1000;
     if (selectedItem.unit === "L" && searchUnit === "mL") price = price / 1000;
-    
     return qty * price;
   }, [selectedItem, searchQty, searchUnit]);
 
@@ -99,13 +96,21 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
     return price > 0 ? (totalRecipeCost / price) * 100 : 0;
   }, [totalRecipeCost, appliedPrice]);
 
+  // Lógica Corrigida da Matriz Estratégica
   const classification = useMemo(() => {
     if (realCmv <= 0) return null;
-    if (realCmv <= 25) return { label: "Tesouro", emoji: "👑" };
-    if (realCmv <= 35) return { label: "Vela/Motor", emoji: "⛵" };
-    if (realCmv <= 45) return { label: "Pérola Escondida", emoji: "🦪" };
-    return { label: "Âncora", emoji: "⚓" };
-  }, [realCmv]);
+    const isHighProfit = realCmv <= (parseFloat(targetCmv) || 30);
+    
+    if (isHighProfit) {
+      return salesVolume === "Alta Venda" 
+        ? { label: "Tesouro", emoji: "👑" } 
+        : { label: "Pérola Escondida", emoji: "🦪" };
+    } else {
+      return salesVolume === "Alta Venda" 
+        ? { label: "Vela/Motor", emoji: "⛵" } 
+        : { label: "Âncora", emoji: "⚓" };
+    }
+  }, [realCmv, targetCmv, salesVolume]);
 
   // Handlers
   const handleSelectItem = (item: any) => {
@@ -121,8 +126,6 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
       return;
     }
     const qty = parseFloat(searchQty) || 1;
-    
-    // Calcula o custo unitário baseado na unidade selecionada
     let effectiveUnitPrice = selectedItem.unitPrice;
     if (selectedItem.unit === "kg" && searchUnit === "g") effectiveUnitPrice /= 1000;
     if (selectedItem.unit === "L" && searchUnit === "mL") effectiveUnitPrice /= 1000;
@@ -131,7 +134,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
       id: crypto.randomUUID(),
       name: selectedItem.name,
       quantity: qty,
-      unit: searchUnit,
+      unit: isPackaging ? "un" : searchUnit,
       unitPrice: effectiveUnitPrice,
       cost: qty * effectiveUnitPrice
     };
@@ -175,7 +178,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
       return;
     }
     onSave({
-      name, yieldAmount, yieldUnit, ingredients, packaging, instructions, targetCmv, appliedPrice
+      name, yieldAmount, yieldUnit, salesVolume, ingredients, packaging, instructions, targetCmv, appliedPrice
     });
     onOpenChange(false);
   };
@@ -234,6 +237,18 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="w-48 space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Volume de Venda</Label>
+                  <Select value={salesVolume} onValueChange={setSalesVolume}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Alta Venda">Alta Venda</SelectItem>
+                      <SelectItem value="Baixa Venda">Baixa Venda</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
@@ -253,7 +268,6 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
           <div className="flex-1 overflow-y-auto p-6">
             {/* Aba 1: Composição */}
             <TabsContent value="composicao" className="m-0 space-y-6">
-              {/* Barra de Adição Inline Inteligente */}
               <div className="flex items-end gap-2 bg-muted/20 p-3 rounded-xl border border-border/50">
                 <div className="flex-[2] relative">
                   <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Buscar Insumo / Base</Label>
@@ -367,7 +381,6 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                 </p>
               </div>
 
-              {/* Barra de Adição Inline Inteligente (Embalagens) */}
               <div className="flex items-end gap-2 bg-muted/20 p-3 rounded-xl border border-border/50">
                 <div className="flex-[2] relative">
                   <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Buscar Embalagem</Label>
@@ -408,12 +421,12 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
 
                 <div className="w-32">
                   <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Unidade</Label>
-                  <Select value={searchUnit} onValueChange={setSearchUnit}>
+                  <Select value="un" disabled>
                     <SelectTrigger className="h-10">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {UNIT_OPTIONS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                      <SelectItem value="un">un</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
