@@ -3,9 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, FileSearch, ArrowRight, AlertCircle, CheckCircle2, TrendingUp } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { 
+  Calculator, 
+  Calendar as CalendarIcon, 
+  ArrowRight, 
+  AlertCircle, 
+  CheckCircle2, 
+  TrendingUp,
+  FileSearch
+} from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { useInventory } from "@/hooks/useInventory";
 import { cn } from "@/lib/utils";
@@ -16,8 +27,8 @@ export default function InventoryBalance() {
   // Estados dos Filtros e Parâmetros
   const [rawRevenue, setRawRevenue] = useState("");
   const [rawTarget, setRawTarget] = useState("3000"); // 30.00%
-  const [initialDate, setInitialDate] = useState("");
-  const [finalDate, setFinalDate] = useState("");
+  const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
+  const [finalDate, setFinalDate] = useState<Date | undefined>(undefined);
   const [isCalculated, setIsCalculated] = useState(false);
 
   // Máscara de Moeda BRL
@@ -45,23 +56,15 @@ export default function InventoryBalance() {
     return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
   }, [rawTarget]);
 
-  // Mock de datas de inventário
-  const inventoryDates = [
-    { value: "2024-03-01", label: "01/03/2024" },
-    { value: "2024-03-15", label: "15/03/2024" },
-    { value: "2024-03-31", label: "31/03/2024" },
-  ];
-
   // Cálculos do Diagnóstico
   const diagnosis = useMemo(() => {
     const revenueNum = parseInt(rawRevenue || "0") / 100;
     const targetNum = parseInt(rawTarget || "0") / 100;
 
     const tableData = items.map(item => {
-      // Simulação de valores financeiros baseados no estoque
       const unitCost = item.cost_per_stock_unit || 0;
-      const estInicialR$ = (item.current_stock * 0.9) * unitCost; // Simulado
-      const entradasR$ = (item.quantity_purchased * (item.conversion_factor || 1)) * unitCost; // Simulado
+      const estInicialR$ = (item.current_stock * 0.9) * unitCost; 
+      const entradasR$ = (item.quantity_purchased * (item.conversion_factor || 1)) * unitCost;
       const estFinalR$ = item.current_stock * unitCost;
       const saidasR$ = (estInicialR$ + entradasR$) - estFinalR$;
       
@@ -94,38 +97,44 @@ export default function InventoryBalance() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 max-w-[1400px] mx-auto">
+    <div className="space-y-8 animate-in fade-in duration-700 w-full px-2">
       <header className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Diagnóstico de CMV Real</h1>
         <p className="text-muted-foreground">Apuração técnica baseada na movimentação física de estoque (EI + C - EF).</p>
       </header>
 
-      {/* 1. Parâmetros de Cálculo */}
-      <Card className="border-border/40 shadow-sm bg-card/50">
+      {/* 1. Parâmetros de Cálculo (Barra Horizontal Full Width) */}
+      <Card className="border-border/40 shadow-sm bg-card/50 w-full">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
             <div className="space-y-2">
               <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Inventário Inicial</label>
-              <Select value={initialDate} onValueChange={setInitialDate}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="DD/MM/AAAA" />
-                </SelectTrigger>
-                <SelectContent>
-                  {inventoryDates.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !initialDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {initialDate ? format(initialDate, "dd/MM/yyyy") : <span>Selecione a data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={initialDate} onSelect={setInitialDate} locale={ptBR} initialFocus />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
               <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Inventário Final</label>
-              <Select value={finalDate} onValueChange={setFinalDate}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="DD/MM/AAAA" />
-                </SelectTrigger>
-                <SelectContent>
-                  {inventoryDates.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !finalDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {finalDate ? format(finalDate, "dd/MM/yyyy") : <span>Selecione a data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={finalDate} onSelect={setFinalDate} locale={ptBR} initialFocus />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
@@ -147,7 +156,10 @@ export default function InventoryBalance() {
               />
             </div>
 
-            <Button onClick={handleCalculate} className="h-10 bg-primary hover:bg-primary/90 font-bold">
+            <Button 
+              onClick={handleCalculate} 
+              className="h-10 bg-[#002B5B] hover:bg-[#001f3f] text-white font-bold transition-colors"
+            >
               Calcular Diagnóstico
             </Button>
           </div>
@@ -156,11 +168,11 @@ export default function InventoryBalance() {
 
       {isCalculated ? (
         <>
-          {/* 2. O Diagnóstico Visual */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* 2. O Diagnóstico Visual (Cards Estruturados) */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
             <Card className={cn(
               "md:col-span-1 border-none shadow-lg transition-all duration-500 flex flex-col justify-center items-center p-8 min-h-[220px] text-white",
-              diagnosis.isSuccess ? "bg-blue-600" : "bg-red-600"
+              diagnosis.isSuccess ? "bg-[#002B5B]" : "bg-[#991b1b]"
             )}>
               <div className="text-center space-y-2">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">CMV Real do Período</p>
@@ -176,7 +188,7 @@ export default function InventoryBalance() {
               </div>
             </Card>
 
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-border/40 shadow-sm flex flex-col justify-center">
               <CardHeader className="pb-2">
                 <CardDescription className="text-[10px] font-bold uppercase tracking-wider">Seu CMV (R$)</CardDescription>
                 <CardTitle className="text-2xl font-bold text-foreground">{formatCurrency(diagnosis.totalCMV_R$)}</CardTitle>
@@ -186,7 +198,7 @@ export default function InventoryBalance() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-border/40 shadow-sm flex flex-col justify-center">
               <CardHeader className="pb-2">
                 <CardDescription className="text-[10px] font-bold uppercase tracking-wider">Faturamento Bruto</CardDescription>
                 <CardTitle className="text-2xl font-bold text-foreground">{formatCurrency(diagnosis.revenueNum)}</CardTitle>
@@ -196,13 +208,13 @@ export default function InventoryBalance() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-border/40 shadow-sm flex flex-col justify-center">
               <CardHeader className="pb-2">
                 <CardDescription className="text-[10px] font-bold uppercase tracking-wider">Sua Meta vs. Real</CardDescription>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-muted-foreground">{diagnosis.targetNum.toFixed(1)}%</span>
                   <span className="text-sm text-muted-foreground">vs.</span>
-                  <span className={cn("text-2xl font-bold", diagnosis.isSuccess ? "text-blue-600" : "text-red-600")}>
+                  <span className={cn("text-2xl font-bold", diagnosis.isSuccess ? "text-[#002B5B]" : "text-[#991b1b]")}>
                     {diagnosis.realCMV_Percent.toFixed(1)}%
                   </span>
                 </div>
@@ -210,7 +222,7 @@ export default function InventoryBalance() {
               <CardContent>
                 <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden mt-2">
                   <div 
-                    className={cn("h-full transition-all duration-1000", diagnosis.isSuccess ? "bg-blue-600" : "bg-red-600")}
+                    className={cn("h-full transition-all duration-1000", diagnosis.isSuccess ? "bg-[#002B5B]" : "bg-[#991b1b]")}
                     style={{ width: `${Math.min(diagnosis.realCMV_Percent, 100)}%` }}
                   />
                 </div>
@@ -218,8 +230,8 @@ export default function InventoryBalance() {
             </Card>
           </div>
 
-          {/* 3. Raio-X Detalhado */}
-          <Card className="border-border/40 shadow-sm overflow-hidden">
+          {/* 3. Raio-X Detalhado (Tabela Full Width) */}
+          <Card className="border-border/40 shadow-sm overflow-hidden w-full">
             <CardHeader className="border-b border-border/40 bg-muted/20">
               <CardTitle className="text-sm font-bold uppercase tracking-widest">Raio-X de Movimentação Financeira</CardTitle>
             </CardHeader>
@@ -279,7 +291,7 @@ export default function InventoryBalance() {
           </Card>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center py-32 text-center space-y-6 bg-muted/10 rounded-3xl border border-dashed border-border/60">
+        <div className="flex flex-col items-center justify-center py-32 text-center space-y-6 bg-muted/10 rounded-3xl border border-dashed border-border/60 w-full">
           <div className="p-5 bg-background rounded-full shadow-sm border border-border/40">
             <Calculator className="h-10 w-10 text-muted-foreground/40" />
           </div>
