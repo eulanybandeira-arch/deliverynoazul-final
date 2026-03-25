@@ -1,218 +1,280 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, DollarSign, ShoppingBag, Calculator, PlusCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
+import { Calculator, TrendingUp, AlertCircle, FileSearch, ArrowRight } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { useInventory } from "@/hooks/useInventory";
-import { useCashFlow } from "@/hooks/useCashFlow";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { parseISO, isSameMonth, isSameYear, startOfMonth, endOfMonth } from 'date-fns';
-import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-const monthOptions = [
-  { value: "0", label: "Janeiro" }, { value: "1", label: "Fevereiro" },
-  { value: "2", label: "Março" }, { value: "3", label: "Abril" },
-  { value: "4", label: "Maio" }, { value: "5", label: "Junho" },
-  { value: "6", label: "Julho" }, { value: "7", label: "Agosto" },
-  { value: "8", label: "Setembro" }, { value: "9", label: "Outubro" },
-  { value: "10", label: "Novembro" }, { value: "11", label: "Dezembro" },
-];
+const COLORS = ["#4B86E8", "#53D2E8", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
 export default function InventoryBalance() {
-  const { items: allInventoryItems } = useInventory();
-  const { entries } = useCashFlow();
-
-  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
-  const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth()));
+  const { items } = useInventory();
   
-  const yearOptions = [2024, 2025, 2026];
+  // Estados dos Filtros
+  const [revenue, setRevenue] = useState<number>(0);
+  const [targetCMV, setTargetCMV] = useState<number>(30);
+  const [initialDate, setInitialDate] = useState("2024-03-01");
+  const [finalDate, setFinalDate] = useState("2024-03-31");
+  const [isGenerated, setIsGenerated] = useState(false);
 
-  // Cálculos Financeiros
-  const stats = useMemo(() => {
-    const year = parseInt(selectedYear);
-    const month = parseInt(selectedMonth);
-    const targetDate = new Date(year, month);
+  // Mock de datas de inventário (em um cenário real viria do banco)
+  const inventoryDates = [
+    "2024-01-01", "2024-01-31", "2024-02-01", "2024-02-29", "2024-03-01", "2024-03-31"
+  ];
 
-    // 1. Estoque Atual (Final) - Valor total de todos os itens hoje
-    const currentStockValue = allInventoryItems.reduce((acc, item) => {
-      return acc + (item.cost_per_stock_unit * item.current_stock);
-    }, 0);
+  // Cálculos do Diagnóstico
+  const diagnosis = useMemo(() => {
+    // Simulação de valores para demonstração da lógica EI + C - EF
+    const tableData = items.map(item => {
+      const estInicial = (item.current_stock * 0.8); // Simulado
+      const entradas = (item.quantity_purchased || 0); // Simulado
+      const estFinal = item.current_stock;
+      const consumoReal = (estInicial + entradas) - estFinal;
+      const custoTotal = consumoReal * (item.cost_per_stock_unit || 0);
 
-    // 2. Compras do Mês - Lançamentos de 'saída' na categoria 'insumos' ou 'custos'
-    const monthlyPurchases = entries
-      .filter(e => 
-        e.type === 'saída' && 
-        (e.category === 'insumos' || e.category === 'custos') &&
-        isSameMonth(parseISO(e.date), targetDate) &&
-        isSameYear(parseISO(e.date), targetDate)
-      )
-      .reduce((sum, e) => sum + e.value, 0);
-
-    // 3. Estoque Inicial (Simulado como o estoque atual menos as compras do mês para fins de demonstração)
-    // Em um sistema real, isso viria de uma tabela de snapshots de fechamento de mês anterior.
-    const initialStockValue = Math.max(0, currentStockValue * 0.95); // Simulação: 95% do atual
-
-    // 4. CMV Apurado: (EI + C) - EF
-    const cmvApurado = (initialStockValue + monthlyPurchases) - currentStockValue;
-
-    return {
-      currentStockValue,
-      monthlyPurchases,
-      initialStockValue,
-      cmvApurado
-    };
-  }, [selectedMonth, selectedYear, allInventoryItems, entries]);
-
-  const handleStartClosure = () => {
-    toast.info("Iniciando processo de fechamento de CMV...", {
-      description: "O sistema irá congelar os saldos atuais para gerar o relatório final do período."
+      return {
+        ...item,
+        estInicial,
+        entradas,
+        estFinal,
+        consumoReal,
+        custoTotal
+      };
     });
+
+    const totalCost = tableData.reduce((acc, item) => acc + Math.max(0, item.custoTotal), 0);
+    const realCMV = revenue > 0 ? (totalCost / revenue) * 100 : 0;
+
+    // Agrupamento por categoria para o gráfico
+    const categoryMap: Record<string, number> = {};
+    tableData.forEach(item => {
+      const cat = item.category_logistics || "Outros";
+      categoryMap[cat] = (categoryMap[cat] || 0) + Math.max(0, item.custoTotal);
+    });
+
+    const chartData = Object.entries(categoryMap).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value
+    })).sort((a, b) => b.value - a.value);
+
+    return { tableData, totalCost, realCMV, chartData };
+  }, [items, revenue]);
+
+  const handleGenerate = () => {
+    if (revenue <= 0) {
+      return;
+    }
+    setIsGenerated(true);
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <header className="space-y-1">
-          <h1 className="text-3xl font-bold text-primary dark:text-foreground">Apuração de CMV</h1>
-          <p className="text-muted-foreground">
-            Gestão financeira de estoque e cálculo real do Custo de Mercadoria Vendida.
-          </p>
-        </header>
-        <Button onClick={handleStartClosure} className="gap-2 shadow-lg">
-          <PlusCircle className="h-4 w-4" />
-          Iniciar Novo Fechamento de CMV
-        </Button>
-      </div>
+      <header className="space-y-1">
+        <h1 className="text-3xl font-bold text-primary dark:text-foreground">Diagnóstico de CMV Real</h1>
+        <p className="text-muted-foreground">
+          Cruze seus inventários com o faturamento para descobrir sua lucratividade real.
+        </p>
+      </header>
 
-      {/* Filtros de Período */}
-      <Card className="bg-muted/30 border-none">
-        <CardContent className="p-3 flex items-center gap-3">
-          <span className="text-xs font-bold uppercase text-muted-foreground px-2">Período de Análise:</span>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[140px] h-9 bg-background"><SelectValue /></SelectTrigger>
-            <SelectContent>{monthOptions.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
-          </Select>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[100px] h-9 bg-background"><SelectValue /></SelectTrigger>
-            <SelectContent>{yearOptions.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {/* Cards de Resumo */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-primary">
-              Valor Total em Estoque Atual
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {formatCurrency(stats.currentStockValue)}
+      {/* 1. Barra de Filtros */}
+      <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-muted-foreground">Inventário Inicial</label>
+              <Select value={initialDate} onValueChange={setInitialDate}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {inventoryDates.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Representa seu Estoque Final (EF) para o cálculo.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-accent/20 bg-accent/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-accent-foreground">
-              Total de Compras (Mês Atual)
-            </CardTitle>
-            <ShoppingBag className="h-4 w-4 text-accent-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-accent-foreground">
-              {formatCurrency(stats.monthlyPurchases)}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-muted-foreground">Inventário Final</label>
+              <Select value={finalDate} onValueChange={setFinalDate}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {inventoryDates.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Soma de todos os insumos lançados no período.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-metric-cyan/20 bg-metric-cyan/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-metric-cyan">
-              CMV Apurado (Mês Atual)
-            </CardTitle>
-            <Calculator className="h-4 w-4 text-metric-cyan" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-metric-cyan">
-              {formatCurrency(stats.cmvApurado)}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-muted-foreground">Faturamento (R$)</label>
+              <Input 
+                type="number" 
+                placeholder="0,00" 
+                className="bg-background"
+                value={revenue || ""}
+                onChange={(e) => setRevenue(Number(e.target.value))}
+              />
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Fórmula: (Estoque Inicial + Compras) - Estoque Atual.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabela de Detalhes de Insumos */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            Composição do Estoque por Item
-          </CardTitle>
-          <CardDescription>
-            Análise detalhada do valor imobilizado e peso de cada insumo no seu inventário.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="font-bold">Insumo</TableHead>
-                  <TableHead className="text-center font-bold">Qtd. Atual</TableHead>
-                  <TableHead className="text-center font-bold">Unidade</TableHead>
-                  <TableHead className="text-right font-bold">Valor Imobilizado</TableHead>
-                  <TableHead className="text-right font-bold">% Participação</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allInventoryItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      Nenhum insumo cadastrado no sistema.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  allInventoryItems
-                    .sort((a, b) => (b.cost_per_stock_unit * b.current_stock) - (a.cost_per_stock_unit * a.current_stock))
-                    .map((item) => {
-                      const itemValue = item.cost_per_stock_unit * item.current_stock;
-                      const participation = stats.currentStockValue > 0 
-                        ? (itemValue / stats.currentStockValue) * 100 
-                        : 0;
-
-                      return (
-                        <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
-                          <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell className="text-center">{item.current_stock.toFixed(2)}</TableCell>
-                          <TableCell className="text-center text-muted-foreground text-xs uppercase">{item.stock_unit}</TableCell>
-                          <TableCell className="text-right font-semibold">{formatCurrency(itemValue)}</TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant="outline" className="font-mono text-[10px]">
-                              {participation.toFixed(1)}%
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                )}
-              </TableBody>
-            </Table>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-muted-foreground">Meta de CMV (%)</label>
+              <Input 
+                type="number" 
+                placeholder="30" 
+                className="bg-background"
+                value={targetCMV || ""}
+                onChange={(e) => setTargetCMV(Number(e.target.value))}
+              />
+            </div>
+            <Button onClick={handleGenerate} className="w-full bg-primary hover:bg-primary/90 gap-2">
+              <FileSearch className="h-4 w-4" /> Gerar Diagnóstico
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+      {isGenerated && (
+        <>
+          {/* 2. Painel de Resultados */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs font-bold uppercase">Faturamento Informado</CardDescription>
+                <CardTitle className="text-2xl">{formatCurrency(revenue)}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs font-bold uppercase">Custo Total Apurado</CardDescription>
+                <CardTitle className="text-2xl text-primary">{formatCurrency(diagnosis.totalCost)}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs font-bold uppercase">Sua Meta</CardDescription>
+                <CardTitle className="text-2xl text-muted-foreground">{targetCMV}%</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className={cn(
+              "md:col-span-1 border-2 transition-colors",
+              diagnosis.realCMV <= targetCMV ? "border-primary bg-primary/5" : "border-destructive bg-destructive/5"
+            )}>
+              <CardHeader className="pb-2">
+                <CardDescription className={cn(
+                  "text-xs font-bold uppercase",
+                  diagnosis.realCMV <= targetCMV ? "text-primary" : "text-destructive"
+                )}>
+                  CMV Real do Período
+                </CardDescription>
+                <div className="flex items-baseline gap-2">
+                  <CardTitle className={cn(
+                    "text-4xl font-black",
+                    diagnosis.realCMV <= targetCMV ? "text-primary" : "text-destructive"
+                  )}>
+                    {diagnosis.realCMV.toFixed(1)}%
+                  </CardTitle>
+                  {diagnosis.realCMV > targetCMV && <AlertCircle className="h-5 w-5 text-destructive" />}
+                </div>
+              </CardHeader>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* 3. Visão por Categorias */}
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle className="text-sm font-bold uppercase">Custo por Categoria</CardTitle>
+                <CardDescription>Onde seu dinheiro foi consumido</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={diagnosis.chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {diagnosis.chartData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                      formatter={(value: number) => formatCurrency(value)}
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36}/>
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* 4. Tabela de Raio-X */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-sm font-bold uppercase">Raio-X de Consumo por Insumo</CardTitle>
+                <CardDescription>Detalhamento técnico da movimentação física e financeira</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[400px] overflow-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                      <TableRow>
+                        <TableHead className="text-[10px] font-bold uppercase">Insumo</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase">Est. Inicial</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase">Entradas</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase">Est. Final</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase text-center">Consumo Real</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase text-right">Custo Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {diagnosis.tableData.map((item) => (
+                        <TableRow key={item.id} className="hover:bg-muted/50">
+                          <TableCell className="py-2">
+                            <div className="font-medium text-xs">{item.name}</div>
+                            <div className="text-[9px] text-muted-foreground uppercase">{item.category_logistics}</div>
+                          </TableCell>
+                          <TableCell className="text-xs text-center">{item.estInicial.toFixed(2)}</TableCell>
+                          <TableCell className="text-xs text-center">{item.entradas.toFixed(2)}</TableCell>
+                          <TableCell className="text-xs text-center">{item.estFinal.toFixed(2)}</TableCell>
+                          <TableCell className={cn(
+                            "text-xs text-center font-bold",
+                            item.consumoReal < 0 ? "text-destructive bg-destructive/10" : ""
+                          )}>
+                            {item.consumoReal.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-xs text-right font-semibold">
+                            {formatCurrency(item.custoTotal)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+
+      {!isGenerated && (
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 bg-muted/20 rounded-3xl border-2 border-dashed">
+          <Calculator className="h-12 w-12 text-muted-foreground/40" />
+          <div className="space-y-1">
+            <h3 className="font-bold text-lg">Aguardando Dados</h3>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Informe o faturamento e a meta desejada acima para gerar o diagnóstico de lucratividade.
+            </p>
+          </div>
+          <ArrowRight className="h-5 w-5 text-primary animate-bounce" />
+        </div>
+      )}
     </div>
   );
 }
