@@ -50,11 +50,11 @@ export function AppSidebar() {
               e.preventDefault();
               toast.info(TRIAL_MESSAGE);
             }} 
-            className="opacity-60 cursor-not-allowed"
+            className="opacity-60 cursor-not-allowed h-auto py-2"
           >
-            <item.icon className="h-4 w-4" />
-            <span>{item.title}</span>
-            <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
+            <item.icon className="h-4 w-4 shrink-0" />
+            <span className="leading-tight">{item.title}</span>
+            <Lock className="h-3 w-3 ml-auto text-muted-foreground shrink-0" />
           </SidebarMenuButton>
         </SidebarMenuItem>
       );
@@ -62,16 +62,16 @@ export function AppSidebar() {
 
     return (
       <SidebarMenuItem key={item.url}>
-        <SidebarMenuButton asChild tooltip={item.title}>
+        <SidebarMenuButton asChild tooltip={item.title} className="h-auto py-2">
           <NavLink
             to={item.url}
             end
             className={({ isActive }) =>
-              cn("transition-all duration-300", isActive && "font-medium bg-accent/50")
+              cn("transition-all duration-300 flex items-center gap-2", isActive && "font-medium bg-accent/50")
             }
           >
-            <item.icon className="h-4 w-4" />
-            <span>{item.title}</span>
+            <item.icon className="h-4 w-4 shrink-0" />
+            <span className="leading-tight">{item.title}</span>
           </NavLink>
         </SidebarMenuButton>
       </SidebarMenuItem>

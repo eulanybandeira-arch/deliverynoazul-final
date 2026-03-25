@@ -103,7 +103,7 @@ export default function Receitas() {
     <div className="space-y-8 animate-in fade-in duration-700 w-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Fichas Técnicas & Engenharia</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Fichas Técnicas & Engenharia de Cardápio</h1>
           <p className="text-muted-foreground">Descubra os pratos que são tesouros e corte as âncoras que afundam o seu cardápio.</p>
         </div>
         <Button 

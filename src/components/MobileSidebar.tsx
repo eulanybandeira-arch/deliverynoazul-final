@@ -31,7 +31,7 @@ export function MobileSidebar() {
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     cn(
-      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors h-auto",
       isActive
         ? "bg-sidebar-accent text-sidebar-accent-foreground"
         : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50"
@@ -44,19 +44,19 @@ export function MobileSidebar() {
         <button
           key={item.url}
           onClick={() => toast.info(TRIAL_MESSAGE)}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors opacity-60 cursor-not-allowed text-muted-foreground"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors opacity-60 cursor-not-allowed text-muted-foreground h-auto text-left"
         >
-          <item.icon className="h-4 w-4" />
-          <span className="whitespace-nowrap flex-1 text-left">{item.title}</span>
-          <Lock className="h-3 w-3 ml-auto" />
+          <item.icon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 leading-tight">{item.title}</span>
+          <Lock className="h-3 w-3 ml-auto shrink-0" />
         </button>
       );
     }
 
     return (
       <NavLink key={item.url} to={item.url} end className={getNavCls}>
-        <item.icon className="h-4 w-4" />
-        <span className="whitespace-nowrap">{item.title}</span>
+        <item.icon className="h-4 w-4 shrink-0" />
+        <span className="leading-tight">{item.title}</span>
       </NavLink>
     );
   };
