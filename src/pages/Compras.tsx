@@ -18,7 +18,7 @@ const MOCK_INSUMOS: Insumo[] = [
 ];
 
 export default function Compras() {
-  const [insumos, setInsumos] = useState<Insumo[]>(MOCK_INSUMOS);
+  const [insumos, setInsumos] = useState(MOCK_INSUMOS);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -53,7 +53,7 @@ export default function Compras() {
     const newInsumos = scannedItems.map(item => ({
       id: item.id,
       name: item.name,
-      category: "Secos", // Categoria padrão para revisão posterior
+      category: "Secos",
       purchaseUnit: `${item.quantity}${item.unit}`,
       stockUnit: item.unit,
       yieldFactor: 100,
@@ -76,12 +76,11 @@ export default function Compras() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header e Ações */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-primary">
             <Package className="h-6 w-6" />
-            <h1 className="text-3xl font-bold tracking-tight dark:text-foreground">
+            <h1 className="text-3xl font-bold tracking-tight">
               Banco de Insumos
             </h1>
           </div>
@@ -92,7 +91,7 @@ export default function Compras() {
 
         <div className="flex flex-wrap gap-3">
           <Button 
-            className="bg-primary hover:bg-primary/90 shadow-[0_0_20px_hsl(var(--primary)/0.4)] gap-2"
+            className="bg-primary hover:bg-primary/90 shadow-lg gap-2"
             onClick={() => setIsScannerModalOpen(true)}
           >
             <Camera className="h-4 w-4" />
@@ -100,7 +99,7 @@ export default function Compras() {
           </Button>
           <Button 
             variant="outline" 
-            className="gap-2"
+            className="gap-2 border-primary text-primary hover:bg-primary/5"
             onClick={() => {
               setEditingInsumo(null);
               setIsFormModalOpen(true);
@@ -112,7 +111,6 @@ export default function Compras() {
         </div>
       </div>
 
-      {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-4 items-center bg-card/40 backdrop-blur-sm p-4 rounded-2xl border border-border/40">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -141,14 +139,12 @@ export default function Compras() {
         </div>
       </div>
 
-      {/* Tabela */}
       <InsumoTable 
         data={filteredInsumos} 
         onEdit={handleEdit} 
         onDelete={handleDelete} 
       />
 
-      {/* Modal de Cadastro Manual */}
       <InsumoFormModal 
         open={isFormModalOpen} 
         onOpenChange={setIsFormModalOpen} 
@@ -156,7 +152,6 @@ export default function Compras() {
         editingInsumo={editingInsumo}
       />
 
-      {/* Modal de Scanner IA */}
       <ScannerModal 
         open={isScannerModalOpen}
         onOpenChange={setIsScannerModalOpen}

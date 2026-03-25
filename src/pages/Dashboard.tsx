@@ -7,7 +7,6 @@ import { Calendar, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-// Mock data generator based on view
 const getMockData = (view: string) => {
   const views: Record<string, any> = {
     semanal: {
@@ -68,49 +67,24 @@ const getMockData = (view: string) => {
 export default function Dashboard() {
   const [view, setView] = useState("trimestral");
   
-  // State for bottlenecks
   const [bottlenecks, setBottlenecks] = useState<Bottleneck[]>([
-    { 
-      id: "1", 
-      title: "🥩 Furo Inventário: Carne", 
-      description: "Contagem de 8kg vs. Sistema 10kg", 
-      impact: "Perda R$ 180,00", 
-      type: "inventory", 
-      resolved: false 
-    },
-    { 
-      id: "2", 
-      title: "🧀 Mussarela: Preço", 
-      description: "Aumento de +12% no último pedido", 
-      impact: "Erosão 1.5% Margem", 
-      type: "price", 
-      resolved: false 
-    },
+    { id: "1", title: "🥩 Furo Inventário: Carne", description: "Contagem de 8kg vs. Sistema 10kg", impact: "Perda R$ 180,00", type: "inventory", resolved: false },
+    { id: "2", title: "🧀 Mussarela: Preço", description: "Aumento de +12% no último pedido", impact: "Erosão 1.5% Margem", type: "price", resolved: false },
   ]);
 
-  // State for interventions
   const [interventions, setInterventions] = useState<Intervention[]>([
     { id: "i1", title: "Treinamento João", date: "12/03", status: "concluido" },
     { id: "i2", title: "Implantação Ficha Bebidas", date: "15/03", status: "em_andamento" },
   ]);
 
-  // Get data based on view
   const currentData = useMemo(() => getMockData(view), [view]);
-
-  // Add dynamic interventions to chart data
-  const chartDataWithInterventions = useMemo(() => {
-    // In a real app, we would filter interventions that fall into the current view's range
-    return currentData.chart;
-  }, [currentData, interventions]);
 
   const handleResolveBottleneck = (id: string, actionType: string, notes: string) => {
     const bottleneck = bottlenecks.find(b => b.id === id);
     if (!bottleneck) return;
 
-    // 1. Mark as resolved
     setBottlenecks(prev => prev.map(b => b.id === id ? { ...b, resolved: true } : b));
 
-    // 2. Add to interventions list
     const newIntervention: Intervention = {
       id: `int-${Date.now()}`,
       title: `${actionType.charAt(0).toUpperCase() + actionType.slice(1)}: ${bottleneck.title.split(':')[1].trim()}`,
@@ -119,19 +93,17 @@ export default function Dashboard() {
     };
     setInterventions(prev => [newIntervention, ...prev]);
 
-    // 3. Show success toast
     toast.success("Intervenção registrada!", {
       description: "Um novo alfinete de gestão foi adicionado ao seu histórico.",
-      icon: <Brain className="h-4 w-4 text-orange-500" />,
+      icon: <Brain className="h-4 w-4 text-primary" />,
     });
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header Estratégico */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-foreground">
+          <h1 className="text-3xl font-bold tracking-tight">
             Dashboard Estratégico
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -145,7 +117,7 @@ export default function Dashboard() {
             Vista:
           </div>
           <Select value={view} onValueChange={setView}>
-            <SelectTrigger className="w-[160px] h-9 border-none bg-transparent focus:ring-0 font-semibold">
+            <SelectTrigger className="w-[160px] h-9 border-none bg-transparent focus:ring-0 font-semibold text-primary">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -160,14 +132,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Linha de KPIs */}
       <StrategicKPIs data={currentData.kpis} />
 
-      {/* Área Central e Clínica de Gargalos */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
           <CMVChart 
-            data={chartDataWithInterventions} 
+            data={currentData.chart} 
             viewLabel={view.charAt(0).toUpperCase() + view.slice(1)} 
           />
         </div>

@@ -10,8 +10,11 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 217 91% 60%;
+    
+    /* Azul Encorpado #002B5B -> HSL(211, 100%, 18%) */
+    --primary: 211 100% 18%;
     --primary-foreground: 210 40% 98%;
+    
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -24,28 +27,23 @@
     --success-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 217 91% 60%;
+    --ring: 211 100% 18%;
     --radius: 0.5rem;
     --sidebar-background: 210 40% 98%;
     --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 211 100% 18%;
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 210 40% 96.1%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
     --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 211 100% 18%;
     --metric-red: 0 84% 60%;
-    --metric-cyan: 180 82% 45%;
+    --metric-cyan: 211 100% 18%; /* Substituído por Primary */
     --metric-gold: 45 86% 53%;
     --metric-orange: 24 95% 53%;
 
-    /* Brand (deliverynoazul)
-       Hex references:
-       - start: #53D2E8
-       - end:   #4B86E8
-    */
-    --brand-cyan: 189 76% 62%;
-    --brand-royal: 217 77% 60%;
+    --brand-cyan: 211 100% 18%; /* Eliminado ciano */
+    --brand-royal: 211 100% 18%;
   }
  
   .dark {
@@ -55,13 +53,16 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 39% 23%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
+    
+    /* Azul Encorpado no Dark Mode (levemente mais claro para contraste) */
+    --primary: 211 100% 35%;
     --primary-foreground: 210 40% 98%;
+    
     --secondary: 215 20% 65%;
     --secondary-foreground: 210 40% 98%;
     --muted: 222 39% 23%;
     --muted-foreground: 215 20% 65%;
-    --accent: 171 65% 49%;
+    --accent: 211 100% 35%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
@@ -69,19 +70,15 @@
     --success-foreground: 210 40% 98%;
     --border: 222 31% 29%;
     --input: 222 31% 29%;
-    --ring: 217 91% 60%;
+    --ring: 211 100% 35%;
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 211 100% 35%;
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 222 39% 23%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 222 31% 29%;
-    --sidebar-ring: 217 91% 60%;
-    --metric-red: 0 84% 70%;
-    --metric-cyan: 180 82% 65%;
-    --metric-gold: 45 86% 63%;
-    --metric-orange: 24 95% 63%;
+    --sidebar-ring: 211 100% 35%;
   }
 }
 
@@ -94,73 +91,12 @@
     @apply bg-background text-foreground;
   }
 
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
+  /* Padronização Global de Títulos */
+  h1 {
+    @apply text-primary font-bold;
   }
-
-  .dark input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-  }
-
-  /* Remove arrows from number inputs */
-  input::-webkit-outer-spin-button,
-  input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  input[type=number] {
-    -moz-appearance: textfield;
-  }
-}
-
-@layer components {
-  .profit-slider .bg-primary {
-    background: linear-gradient(to right, hsl(var(--destructive)) 0%, hsl(var(--accent)) 50%, hsl(var(--primary)) 80%);
-  }
-
-  /* Sidebar tooltip styling with custom class */
-  .sidebar-custom + * [role="tooltip"],
-  [data-side][role="tooltip"] {
-    background-color: rgba(0, 128, 255, 0.7) !important;
-    color: #FFFFFF !important;
-    border: 1px solid rgba(135, 206, 250, 0.5) !important;
-    box-shadow: 0 0 10px rgba(0, 128, 255, 0.5) !important;
-    border-radius: 6px !important;
-    backdrop-filter: blur(12px) !important;
-  }
-
-  /* Additional tooltip targeting for sidebar */
-  [data-radix-popper-content-wrapper] [role="tooltip"] {
-    background-color: rgba(0, 128, 255, 0.7) !important;
-    color: #FFFFFF !important;
-    border: 1px solid rgba(135, 206, 250, 0.5) !important;
-    box-shadow: 0 0 10px rgba(0, 128, 255, 0.5) !important;
-    border-radius: 6px !important;
-    backdrop-filter: blur(12px) !important;
-  }
-
-  /* Sidebar transparency */
-  .sidebar-custom {
-    background: hsl(var(--sidebar-background) / 0.95) !important;
-    backdrop-filter: blur(8px);
-  }
-
-  /* Sidebar menu items with transparency and glow */
-  .sidebar-custom [data-sidebar="menu-button"] {
-    background: transparent;
-    transition: all 0.3s ease;
-  }
-
-  .sidebar-custom [data-sidebar="menu-button"]:hover {
-    background: hsl(var(--primary) / 0.15) !important;
-    box-shadow: 0 0 8px hsl(var(--primary) / 0.3);
-    backdrop-filter: blur(8px);
-  }
-
-  .sidebar-custom [data-sidebar="menu-button"][data-active="true"] {
-    background: hsl(var(--primary) / 0.2) !important;
-    box-shadow: 0 0 12px hsl(var(--primary) / 0.4);
-    backdrop-filter: blur(8px);
+  
+  h2 {
+    @apply text-primary font-semibold;
   }
 }
