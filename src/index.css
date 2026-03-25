@@ -106,20 +106,4 @@
   .dark input, .dark textarea, .dark select {
     @apply text-foreground placeholder:text-muted-foreground;
   }
-
-  /* Estilização Customizada de Botões para Dark Mode */
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([class*="outline"]):not([class*="secondary"]) {
-    @apply bg-transparent border border-white text-white transition-all duration-200;
-  }
-
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([class*="outline"]):not([class*="secondary"]):hover,
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([class*="outline"]):not([class*="secondary"])[data-state="open"],
-  .dark button:not([class*="ghost"]):not([class*="link"]):not([class*="outline"]):not([class*="secondary"])[data-active="true"] {
-    @apply bg-success border-success text-white shadow-[0_0_15px_rgba(34,197,94,0.4)];
-  }
-
-  /* Ajuste específico para botões que usam bg-primary no dark mode */
-  .dark .bg-primary {
-    @apply bg-transparent border border-white text-white hover:bg-success hover:border-success;
-  }
 }
