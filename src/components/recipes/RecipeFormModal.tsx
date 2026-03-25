@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-// --- MOCK DATA PARA TESTE DE USABILIDADE ---
+// --- MOCK DATA PARA BUSCA ---
 const MOCK_INSUMOS = [
   { id: "i1", name: "Pão Brioche", unit: "un", unitPrice: 1.50 },
   { id: "i2", name: "Carne Bovina", unit: "kg", unitPrice: 35.00 },
@@ -44,9 +44,10 @@ interface RecipeFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: any) => void;
+  initialData?: any;
 }
 
-export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalProps) {
+export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: RecipeFormModalProps) {
   // Identidade
   const [name, setName] = useState("");
   const [yieldAmount, setYieldAmount] = useState("1");
@@ -70,6 +71,35 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   // Precificação
   const [targetCmv, setTargetCmv] = useState("30");
   const [appliedPrice, setAppliedPrice] = useState("");
+
+  // Reset/Load data
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        setName(initialData.name || "");
+        setYieldAmount(String(initialData.yieldAmount || "1"));
+        setYieldUnit(initialData.yieldUnit || "Porção");
+        setSalesVolume(initialData.salesVolume || "Alta Venda");
+        setPhotoUrl(initialData.photoUrl || null);
+        setIngredients(initialData.ingredients || []);
+        setPackaging(initialData.packaging || []);
+        setInstructions(initialData.instructions || "");
+        setTargetCmv(String(initialData.targetCmv || "30"));
+        setAppliedPrice(String(initialData.appliedPrice || ""));
+      } else {
+        setName("");
+        setYieldAmount("1");
+        setYieldUnit("Porção");
+        setSalesVolume("Alta Venda");
+        setPhotoUrl(null);
+        setIngredients([]);
+        setPackaging([]);
+        setInstructions("");
+        setTargetCmv("30");
+        setAppliedPrice("");
+      }
+    }
+  }, [open, initialData]);
 
   // Cálculos Dinâmicos
   const totalIngredientsCost = useMemo(() => ingredients.reduce((sum, i) => sum + i.cost, 0), [ingredients]);
@@ -96,19 +126,18 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
     return price > 0 ? (totalRecipeCost / price) * 100 : 0;
   }, [totalRecipeCost, appliedPrice]);
 
-  // Lógica Corrigida da Matriz Estratégica
   const classification = useMemo(() => {
-    if (realCmv <= 0) return null;
+    if (realCmv <= 0) return { label: "Âncora", emoji: "⚓", color: "bg-slate-500/10 text-slate-600 border-slate-200" };
     const isHighProfit = realCmv <= (parseFloat(targetCmv) || 30);
     
     if (isHighProfit) {
       return salesVolume === "Alta Venda" 
-        ? { label: "Tesouro", emoji: "👑" } 
-        : { label: "Pérola Escondida", emoji: "🦪" };
+        ? { label: "Tesouro", emoji: "👑", color: "bg-[#002B5B]/10 text-[#002B5B] border-[#002B5B]/20" } 
+        : { label: "Pérola Escondida", emoji: "🦪", color: "bg-emerald-500/10 text-emerald-600 border-emerald-200" };
     } else {
       return salesVolume === "Alta Venda" 
-        ? { label: "Vela/Motor", emoji: "⛵" } 
-        : { label: "Âncora", emoji: "⚓" };
+        ? { label: "Vela/Motor", emoji: "⛵", color: "bg-blue-400/10 text-blue-600 border-blue-200" } 
+        : { label: "Âncora", emoji: "⚓", color: "bg-slate-500/10 text-slate-600 border-slate-200" };
     }
   }, [realCmv, targetCmv, salesVolume]);
 
@@ -177,13 +206,30 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
       toast.error("Dê um nome para a receita.");
       return;
     }
-    onSave({
-      name, yieldAmount, yieldUnit, salesVolume, ingredients, packaging, instructions, targetCmv, appliedPrice
-    });
+    
+    const recipeData = {
+      id: initialData?.id || crypto.randomUUID(),
+      name,
+      yieldAmount,
+      yieldUnit,
+      salesVolume,
+      photoUrl,
+      ingredients,
+      packaging,
+      instructions,
+      targetCmv,
+      appliedPrice,
+      totalCost: totalRecipeCost,
+      unitCost: totalRecipeCost / (parseFloat(yieldAmount) || 1),
+      cmv: realCmv,
+      status: classification,
+      isActive: initialData ? initialData.isActive : true
+    };
+
+    onSave(recipeData);
     onOpenChange(false);
   };
 
-  // Lógica de Impressão Operacional (Cozinha)
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;

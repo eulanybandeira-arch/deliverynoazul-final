@@ -5,99 +5,107 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, Search } from "lucide-react";
-import { useRecipes } from "@/hooks/useRecipes";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Edit, Trash2, Search, MoreVertical, Printer, ChefHat } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { cn } from "@/lib/utils";
 import { RecipeFormModal } from "@/components/recipes/RecipeFormModal";
 import { toast } from "sonner";
 
+// Dados iniciais para teste
+const INITIAL_RECIPES = [
+  { 
+    id: "1", 
+    name: "Hambúrguer Clássico", 
+    yieldAmount: "1", 
+    yieldUnit: "Porção", 
+    salesVolume: "Alta Venda", 
+    photoUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=100&h=100&fit=crop",
+    ingredients: [], 
+    packaging: [], 
+    instructions: "Grelhar a carne por 3 minutos de cada lado...", 
+    targetCmv: "25", 
+    appliedPrice: "3500", 
+    unitCost: 8.50, 
+    price: 35.00, 
+    cmv: 24.2, 
+    status: { label: "Tesouro", emoji: "👑", color: "bg-[#002B5B]/10 text-[#002B5B] border-[#002B5B]/20" },
+    isActive: true 
+  },
+  { 
+    id: "2", 
+    name: "Batata Frita G", 
+    yieldAmount: "1", 
+    yieldUnit: "Porção", 
+    salesVolume: "Alta Venda", 
+    photoUrl: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=100&h=100&fit=crop",
+    ingredients: [], 
+    packaging: [], 
+    instructions: "Fritar a 180 graus até dourar.", 
+    targetCmv: "30", 
+    appliedPrice: "1800", 
+    unitCost: 6.20, 
+    price: 18.00, 
+    cmv: 34.4, 
+    status: { label: "Vela/Motor", emoji: "⛵", color: "bg-blue-400/10 text-blue-600 border-blue-200" },
+    isActive: true 
+  },
+];
+
 export default function Receitas() {
   const navigate = useNavigate();
-  const { recipes, loading, deleteRecipe, saveRecipe } = useRecipes();
+  const [recipesList, setRecipesList] = useState(INITIAL_RECIPES);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState<any>(null);
 
-  // Lógica de Engenharia de Cardápio
-  const analyzedRecipes = useMemo(() => {
-    return recipes.map(recipe => {
-      const totalCost = recipe.ingredients.reduce((sum, ing) => sum + ing.usedValue, 0) + 
-                        recipe.packaging.reduce((sum, pkg) => sum + pkg.usedValue, 0);
-      const unitCost = recipe.yield > 0 ? totalCost / recipe.yield : 0;
-      const price = recipe.suggested_price || (unitCost * (1 + (recipe.profitMargin / 100)));
-      const cmv = price > 0 ? (unitCost / price) * 100 : 0;
-      
-      const mockPopularity = (parseInt(recipe.id.slice(-1)) || 5) > 5 ? "Alta Venda" : "Baixa Venda";
-      const profitStatus = cmv <= 30 ? "Alto" : "Baixo";
-
-      let status = { label: "Âncora", emoji: "⚓", color: "bg-slate-500/10 text-slate-600 border-slate-200" };
-      
-      if (mockPopularity === "Alta Venda" && profitStatus === "Alto") {
-        status = { label: "Tesouro", emoji: "👑", color: "bg-[#002B5B]/10 text-[#002B5B] border-[#002B5B]/20" };
-      } else if (mockPopularity === "Alta Venda" && profitStatus === "Baixo") {
-        status = { label: "Vela/Motor", emoji: "⛵", color: "bg-blue-400/10 text-blue-600 border-blue-200" };
-      } else if (mockPopularity === "Baixa Venda" && profitStatus === "Alto") {
-        status = { label: "Pérola Escondida", emoji: "🦪", color: "bg-emerald-500/10 text-emerald-600 border-emerald-200" };
-      }
-
-      return { ...recipe, unitCost, price, cmv, status };
-    });
-  }, [recipes]);
-
-  const filteredRecipes = analyzedRecipes.filter(r => 
-    r.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRecipes = useMemo(() => {
+    return recipesList.filter(r => 
+      r.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [recipesList, searchTerm]);
 
   const stats = useMemo(() => {
     return {
-      tesouros: analyzedRecipes.filter(r => r.status.label === "Tesouro").length,
-      velas: analyzedRecipes.filter(r => r.status.label === "Vela/Motor").length,
-      perolas: analyzedRecipes.filter(r => r.status.label === "Pérola Escondida").length,
-      ancoras: analyzedRecipes.filter(r => r.status.label === "Âncora").length,
+      tesouros: recipesList.filter(r => r.status.label === "Tesouro").length,
+      velas: recipesList.filter(r => r.status.label === "Vela/Motor").length,
+      perolas: recipesList.filter(r => r.status.label === "Pérola Escondida").length,
+      ancoras: recipesList.filter(r => r.status.label === "Âncora").length,
     };
-  }, [analyzedRecipes]);
+  }, [recipesList]);
 
-  const handleSaveRecipe = async (data: any) => {
-    try {
-      const price = parseFloat(data.appliedPrice.replace(/\D/g, "")) / 100 || 0;
-      const recipeToSave = {
-        name: data.name,
-        yield: parseFloat(data.yieldAmount),
-        profit_margin: price > 0 ? ((price - (data.ingredients.reduce((s:any, i:any) => s + i.cost, 0) + data.packaging.reduce((s:any, i:any) => s + i.cost, 0))) / price) * 100 : 0,
-        ingredients: data.ingredients.map((ing: any) => ({
-          id: ing.id,
-          name: ing.name,
-          packageQty: 1,
-          unit: ing.unit,
-          unitPrice: ing.cost / ing.quantity,
-          usedQty: ing.quantity,
-          usedValue: ing.cost,
-          inventoryItemId: ing.type === 'insumo' ? ing.id : null
-        })),
-        packaging: data.packaging.map((pkg: any) => ({
-          id: pkg.id,
-          name: pkg.name,
-          packageQty: 1,
-          unit: pkg.unit,
-          packagePrice: pkg.cost / pkg.quantity,
-          usedQty: pkg.quantity,
-          usedValue: pkg.cost,
-          inventoryItemId: pkg.id
-        })),
-        status: 'published'
-      };
+  const handleSaveRecipe = (data: any) => {
+    const exists = recipesList.find(r => r.id === data.id);
+    if (exists) {
+      setRecipesList(prev => prev.map(r => r.id === data.id ? data : r));
+      toast.success("Ficha técnica atualizada!");
+    } else {
+      setRecipesList(prev => [data, ...prev]);
+      toast.success("Nova ficha técnica salva!");
+    }
+    setEditingRecipe(null);
+  };
 
-      await saveRecipe(recipeToSave as any);
-      toast.success("Ficha técnica salva com sucesso!");
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao salvar ficha técnica.");
+  const handleDelete = (id: string) => {
+    if (confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
+      setRecipesList(prev => prev.filter(r => r.id !== id));
+      toast.error("Ficha técnica removida.");
     }
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">Carregando engenharia de cardápio...</div>;
-  }
+  const toggleActive = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRecipesList(prev => prev.map(r => 
+      r.id === id ? { ...r, isActive: !r.isActive } : r
+    ));
+  };
+
+  const openEdit = (recipe: any) => {
+    setEditingRecipe(recipe);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 w-full">
@@ -107,7 +115,7 @@ export default function Receitas() {
           <p className="text-muted-foreground">Descubra os pratos que são tesouros e corte as âncoras que afundam o seu cardápio.</p>
         </div>
         <Button 
-          onClick={() => setIsModalOpen(true)} 
+          onClick={() => { setEditingRecipe(null); setIsModalOpen(true); }} 
           className="bg-[#002B5B] hover:bg-[#001f3f] text-white font-bold h-11 px-6 transition-all shadow-lg shadow-blue-900/20"
         >
           <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
@@ -196,10 +204,10 @@ export default function Receitas() {
             <TableHeader>
               <TableRow className="hover:bg-transparent border-b border-border/40">
                 <TableHead className="text-[10px] font-bold uppercase py-4 pl-6">Prato</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase text-right">Preço de Venda (R$)</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase text-right">Custo Unitário (R$)</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase text-center">Status</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase text-center">Ativo</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase text-right">Preço (R$)</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase text-right">CMV (%)</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase text-center">Status Estratégico</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase text-right pr-6">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -212,10 +220,38 @@ export default function Receitas() {
                 </TableRow>
               ) : (
                 filteredRecipes.map((recipe) => (
-                  <TableRow key={recipe.id} className="hover:bg-muted/30 transition-colors border-b border-border/20">
-                    <TableCell className="py-4 pl-6 font-semibold text-sm">{recipe.name}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">{formatCurrency(recipe.price)}</TableCell>
-                    <TableCell className="text-right font-mono text-sm text-muted-foreground">{formatCurrency(recipe.unitCost)}</TableCell>
+                  <TableRow 
+                    key={recipe.id} 
+                    className={cn(
+                      "hover:bg-muted/30 transition-colors border-b border-border/20 cursor-pointer group",
+                      !recipe.isActive && "opacity-60"
+                    )}
+                    onClick={() => openEdit(recipe)}
+                  >
+                    <TableCell className="py-4 pl-6">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 border border-border/50">
+                          <AvatarImage src={recipe.photoUrl} />
+                          <AvatarFallback className="bg-muted"><ChefHat className="h-5 w-5 text-muted-foreground" /></AvatarFallback>
+                        </Avatar>
+                        <span className="font-bold text-sm group-hover:text-[#002B5B] transition-colors">{recipe.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="text-xl" title={recipe.status.label}>{recipe.status.emoji}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Switch 
+                          checked={recipe.isActive} 
+                          onCheckedChange={() => toggleActive(recipe.id, { stopPropagation: () => {} } as any)} 
+                        />
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">{recipe.isActive ? "Sim" : "Não"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm font-bold">
+                      {formatCurrency(parseFloat(recipe.appliedPrice || "0") / 100)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <span className={cn(
                         "text-xs font-bold px-2 py-1 rounded",
@@ -224,31 +260,26 @@ export default function Receitas() {
                         {recipe.cmv.toFixed(1)}%
                       </span>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Badge className={cn("text-[10px] font-bold uppercase tracking-tighter py-1 px-2", recipe.status.color)}>
-                        {recipe.status.emoji} {recipe.status.label}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-right pr-6">
-                      <div className="flex justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-muted-foreground hover:text-[#002B5B]"
-                          onClick={() => navigate(`/receitas/${recipe.id}`)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                          onClick={() => {
-                            if(confirm("Excluir esta ficha técnica?")) deleteRecipe(recipe.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={() => toast.info("Impressão de custo em desenvolvimento.")}>
+                              <Printer className="mr-2 h-4 w-4" /> Imprimir Custo
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEdit(recipe)}>
+                              <Edit className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(recipe.id)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -263,6 +294,7 @@ export default function Receitas() {
         open={isModalOpen} 
         onOpenChange={setIsModalOpen}
         onSave={handleSaveRecipe}
+        initialData={editingRecipe}
       />
     </div>
   );
