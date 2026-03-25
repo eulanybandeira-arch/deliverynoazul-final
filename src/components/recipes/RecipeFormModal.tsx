@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Search, Trash2, Plus, AlertCircle, CheckCircle2, Info, Package, Layers, BookOpen } from "lucide-react";
+import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -116,6 +116,24 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
     if (!numeric) return "";
     const val = parseInt(numeric) / 100;
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  };
+
+  const handleSave = () => {
+    if (!name) {
+      toast.error("Dê um nome para a receita.");
+      return;
+    }
+    onSave({
+      name,
+      yieldAmount,
+      yieldUnit,
+      ingredients,
+      packaging,
+      instructions,
+      targetCmv,
+      appliedPrice
+    });
+    onOpenChange(false);
   };
 
   return (
