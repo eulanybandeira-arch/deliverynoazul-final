@@ -93,13 +93,14 @@
     @apply bg-background text-foreground;
   }
 
-  /* Padronização Global de Títulos para Branco */
-  h1 {
-    @apply text-white font-bold;
+  /* Títulos em Azul Encorpado no Light Mode */
+  h1, h2 {
+    @apply text-primary font-bold;
   }
   
-  h2 {
-    @apply text-white font-semibold;
+  /* Títulos em Branco APENAS no Dark Mode */
+  .dark h1, .dark h2 {
+    @apply text-white;
   }
 
   .dark input, .dark textarea, .dark select {
