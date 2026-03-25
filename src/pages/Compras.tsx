@@ -24,6 +24,9 @@ export default function Compras() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
+  
+  // Estado para controlar qual ação está em evidência (azul sólido)
+  const [activeAction, setActiveAction] = useState<"scanner" | "manual">("scanner");
 
   const filteredInsumos = useMemo(() => {
     return insumos.filter(i => {
@@ -36,7 +39,7 @@ export default function Compras() {
   const handleSaveInsumo = (data: Partial<Insumo>) => {
     if (editingInsumo) {
       setInsumos(prev => prev.map(i => i.id === editingInsumo.id ? { ...i, ...data } as Insumo : i));
-      toast.success("Insumo updated successfully!");
+      toast.success("Insumo atualizado!");
     } else {
       const newInsumo: Insumo = {
         ...data,
@@ -44,7 +47,7 @@ export default function Compras() {
         avgCostUE: data.avgCostUE || 0,
       } as Insumo;
       setInsumos(prev => [newInsumo, ...prev]);
-      toast.success("New ingredient registered!");
+      toast.success("Novo insumo cadastrado!");
     }
     setEditingInsumo(null);
   };
@@ -61,17 +64,18 @@ export default function Compras() {
       isActiveCMV: true,
     }));
     setInsumos(prev => [...newInsumos, ...prev]);
-    toast.success(`${newInsumos.length} ingredients imported successfully!`);
+    toast.success(`${newInsumos.length} insumos importados!`);
   };
 
   const handleEdit = (insumo: Insumo) => {
     setEditingInsumo(insumo);
+    setActiveAction("manual");
     setIsFormModalOpen(true);
   };
 
   const handleDelete = (id: string) => {
     setInsumos(prev => prev.filter(i => i.id !== id));
-    toast.error("Ingredient removed.");
+    toast.error("Insumo removido.");
   };
 
   return (
@@ -91,16 +95,21 @@ export default function Compras() {
 
         <div className="flex flex-wrap gap-3">
           <Button 
-            className="bg-primary hover:bg-primary/90 shadow-lg gap-2"
-            onClick={() => setIsScannerModalOpen(true)}
+            variant={activeAction === "scanner" ? "default" : "outline"}
+            className={activeAction === "scanner" ? "bg-primary hover:bg-primary/90 shadow-lg gap-2" : "gap-2 border-primary text-primary hover:bg-primary/5"}
+            onClick={() => {
+              setActiveAction("scanner");
+              setIsScannerModalOpen(true);
+            }}
           >
             <Camera className="h-4 w-4" />
             Scanner de Notas/Listas
           </Button>
           <Button 
-            variant="outline" 
-            className="gap-2 border-primary text-primary hover:bg-primary/5"
+            variant={activeAction === "manual" ? "default" : "outline"}
+            className={activeAction === "manual" ? "bg-primary hover:bg-primary/90 shadow-lg gap-2" : "gap-2 border-primary text-primary hover:bg-primary/5"}
             onClick={() => {
+              setActiveAction("manual");
               setEditingInsumo(null);
               setIsFormModalOpen(true);
             }}

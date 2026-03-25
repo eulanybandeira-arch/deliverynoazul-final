@@ -49,6 +49,7 @@ const MOCK_HISTORY = [
 export default function Inventario() {
   const [items, setItems] = useState(MOCK_ITEMS);
   const [inventoryDate, setInventoryDate] = useState(new Date().toISOString().split('T')[0]);
+  const [activeAction, setActiveAction] = useState<"new" | "finalize">("finalize");
 
   const pendingItems = useMemo(() => items.filter(i => !i.confirmed), [items]);
   const countedItems = useMemo(() => items.filter(i => i.confirmed), [items]);
@@ -71,6 +72,7 @@ export default function Inventario() {
   };
 
   const handleFinalize = () => {
+    setActiveAction("finalize");
     if (pendingItems.length > 0) {
       toast.error(`Ainda restam ${pendingItems.length} itens para contar.`);
       return;
@@ -101,10 +103,24 @@ export default function Inventario() {
               className="border-none bg-transparent h-7 w-32 p-0 focus-visible:outline-none font-bold text-sm text-primary"
             />
           </div>
-          <Button variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/5 rounded-xl">
+          <Button 
+            variant={activeAction === "new" ? "default" : "outline"} 
+            className={cn(
+              "gap-2 rounded-xl",
+              activeAction === "new" ? "bg-primary hover:bg-primary/90 shadow-lg" : "border-primary text-primary hover:bg-primary/5"
+            )}
+            onClick={() => setActiveAction("new")}
+          >
             <Plus className="h-4 w-4" /> Nova Contagem
           </Button>
-          <Button onClick={handleFinalize} className="gap-2 shadow-lg bg-primary hover:bg-primary/90 rounded-xl font-bold">
+          <Button 
+            variant={activeAction === "finalize" ? "default" : "outline"}
+            className={cn(
+              "gap-2 rounded-xl font-bold",
+              activeAction === "finalize" ? "bg-primary hover:bg-primary/90 shadow-lg" : "border-primary text-primary hover:bg-primary/5"
+            )}
+            onClick={handleFinalize}
+          >
             <CheckCircle2 className="h-4 w-4" /> Fechar Inventário
           </Button>
         </div>
