@@ -129,7 +129,7 @@ export default function ListaCompras() {
         <Table>
           <TableHeader className="border-b border-border/50">
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[50px] px-4 text-center"><Checkbox /></TableHead>
+              <TableHead className="w-[50px] px-4 text-center"></TableHead>
               <TableHead className="font-normal text-muted-foreground text-sm px-4 py-4">Insumo</TableHead>
               <TableHead className="font-normal text-muted-foreground text-sm text-center">Estoque Atual</TableHead>
               <TableHead className="font-normal text-muted-foreground text-sm text-center">Consumo Médio (CMD)</TableHead>
