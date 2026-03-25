@@ -107,19 +107,24 @@
   /* --- AJUSTE DE BOTÕES DARK MODE (REFERÊNCIA IMAGEM) --- */
 
   /* Botão Outline/Vazado no Dark Mode */
-  /* Alvos: botões que usam border-primary e text-primary como o da imagem */
   .dark button.border-primary.text-primary {
-    @apply border-slate-500 text-white bg-transparent !important;
+    border-color: hsl(var(--muted-foreground) / 0.5) !important;
+    color: white !important;
+    background-color: transparent !important;
   }
 
   /* Estado de Hover/Seleção: Fica azul conforme solicitado */
   .dark button.border-primary.text-primary:hover {
-    @apply bg-primary border-primary text-white !important;
+    background-color: hsl(var(--primary)) !important;
+    border-color: hsl(var(--primary)) !important;
+    color: white !important;
   }
 
   /* Botão Primário (Azul Sólido) - Mantém como na imagem */
   .dark button.bg-primary:not(.border-primary) {
-    @apply bg-primary text-white border-none !important;
+    background-color: hsl(var(--primary)) !important;
+    color: white !important;
+    border: none !important;
   }
 
   /* --- SELEÇÕES DE MENU E PERFIL --- */
