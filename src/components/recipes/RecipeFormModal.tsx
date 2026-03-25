@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package } from "lucide-react";
+import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,12 @@ const MOCK_INSUMOS = [
 const MOCK_EMBALAGENS = [
   { id: "e1", name: "Caixa de Hambúrguer", unit: "un", unitPrice: 1.20 },
   { id: "e2", name: "Sacola Kraft", unit: "un", unitPrice: 0.80 },
+];
+
+const UNIT_OPTIONS = [
+  "kg", "g", "L", "mL", "un", "pacote", "gotas", "colher de sopa", 
+  "colher de chá", "1/4 xícara", "1/3 xícara", "1/2 xícara", 
+  "2/3 xícara", "3/4 xícara", "1 xícara", "personalizada"
 ];
 
 interface RecipeItem {
@@ -56,6 +62,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   // Estados da Barra de Adição Inteligente
   const [searchTerm, setSearchTerm] = useState("");
   const [searchQty, setSearchQty] = useState("1");
+  const [searchUnit, setSearchUnit] = useState("un");
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showResults, setShowResults] = useState(false);
 
@@ -68,10 +75,18 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   const totalPackagingCost = useMemo(() => packaging.reduce((sum, i) => sum + i.cost, 0), [packaging]);
   const totalRecipeCost = totalIngredientsCost + totalPackagingCost;
 
+  // Lógica de Custo Prévio com Conversão Básica
   const previewCost = useMemo(() => {
     if (!selectedItem) return 0;
-    return (parseFloat(searchQty) || 0) * selectedItem.unitPrice;
-  }, [selectedItem, searchQty]);
+    const qty = parseFloat(searchQty) || 0;
+    let price = selectedItem.unitPrice;
+
+    // Conversão simples para o mock
+    if (selectedItem.unit === "kg" && searchUnit === "g") price = price / 1000;
+    if (selectedItem.unit === "L" && searchUnit === "mL") price = price / 1000;
+    
+    return qty * price;
+  }, [selectedItem, searchQty, searchUnit]);
 
   const suggestedPrice = useMemo(() => {
     const cmv = parseFloat(targetCmv) || 30;
@@ -86,16 +101,17 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
 
   const classification = useMemo(() => {
     if (realCmv <= 0) return null;
-    if (realCmv <= 25) return { label: "Tesouro", emoji: "👑", color: "text-[#002B5B] bg-[#002B5B]/5" };
-    if (realCmv <= 35) return { label: "Vela/Motor", emoji: "⛵", color: "text-blue-500 bg-blue-50" };
-    if (realCmv <= 45) return { label: "Pérola Escondida", emoji: "🦪", color: "text-emerald-600 bg-emerald-50" };
-    return { label: "Âncora", emoji: "⚓", color: "text-slate-600 bg-slate-50" };
+    if (realCmv <= 25) return { label: "Tesouro", emoji: "👑" };
+    if (realCmv <= 35) return { label: "Vela/Motor", emoji: "⛵" };
+    if (realCmv <= 45) return { label: "Pérola Escondida", emoji: "🦪" };
+    return { label: "Âncora", emoji: "⚓" };
   }, [realCmv]);
 
   // Handlers
   const handleSelectItem = (item: any) => {
     setSelectedItem(item);
     setSearchTerm(item.name);
+    setSearchUnit(item.unit);
     setShowResults(false);
   };
 
@@ -105,13 +121,19 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
       return;
     }
     const qty = parseFloat(searchQty) || 1;
+    
+    // Calcula o custo unitário baseado na unidade selecionada
+    let effectiveUnitPrice = selectedItem.unitPrice;
+    if (selectedItem.unit === "kg" && searchUnit === "g") effectiveUnitPrice /= 1000;
+    if (selectedItem.unit === "L" && searchUnit === "mL") effectiveUnitPrice /= 1000;
+
     const newItem: RecipeItem = {
       id: crypto.randomUUID(),
       name: selectedItem.name,
       quantity: qty,
-      unit: selectedItem.unit,
-      unitPrice: selectedItem.unitPrice,
-      cost: qty * selectedItem.unitPrice
+      unit: searchUnit,
+      unitPrice: effectiveUnitPrice,
+      cost: qty * effectiveUnitPrice
     };
 
     if (isPackaging) setPackaging([...packaging, newItem]);
@@ -231,9 +253,9 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
           <div className="flex-1 overflow-y-auto p-6">
             {/* Aba 1: Composição */}
             <TabsContent value="composicao" className="m-0 space-y-6">
-              {/* Barra de Adição Inteligente */}
+              {/* Barra de Adição Inline Inteligente */}
               <div className="flex items-end gap-2 bg-muted/20 p-3 rounded-xl border border-border/50">
-                <div className="flex-1 relative">
+                <div className="flex-[2] relative">
                   <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Buscar Insumo / Base</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -260,19 +282,26 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                   )}
                 </div>
                 
-                <div className="w-32">
+                <div className="w-24">
                   <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Qtd.</Label>
-                  <div className="flex">
-                    <Input 
-                      type="number" 
-                      value={searchQty} 
-                      onChange={(e) => setSearchQty(e.target.value)} 
-                      className="rounded-r-none h-10 text-center font-bold"
-                    />
-                    <div className="h-10 px-3 flex items-center justify-center bg-muted border border-l-0 rounded-r-md text-[10px] font-black uppercase text-muted-foreground shrink-0 min-w-[40px]">
-                      {selectedItem?.unit || "-"}
-                    </div>
-                  </div>
+                  <Input 
+                    type="number" 
+                    value={searchQty} 
+                    onChange={(e) => setSearchQty(e.target.value)} 
+                    className="h-10 text-center font-bold"
+                  />
+                </div>
+
+                <div className="w-32">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Unidade</Label>
+                  <Select value={searchUnit} onValueChange={setSearchUnit}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIT_OPTIONS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="w-32">
@@ -338,9 +367,9 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                 </p>
               </div>
 
-              {/* Barra de Adição Inteligente (Embalagens) */}
+              {/* Barra de Adição Inline Inteligente (Embalagens) */}
               <div className="flex items-end gap-2 bg-muted/20 p-3 rounded-xl border border-border/50">
-                <div className="flex-1 relative">
+                <div className="flex-[2] relative">
                   <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Buscar Embalagem</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -367,19 +396,26 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                   )}
                 </div>
                 
-                <div className="w-32">
+                <div className="w-24">
                   <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Qtd.</Label>
-                  <div className="flex">
-                    <Input 
-                      type="number" 
-                      value={searchQty} 
-                      onChange={(e) => setSearchQty(e.target.value)} 
-                      className="rounded-r-none h-10 text-center font-bold"
-                    />
-                    <div className="h-10 px-3 flex items-center justify-center bg-muted border border-l-0 rounded-r-md text-[10px] font-black uppercase text-muted-foreground shrink-0 min-w-[40px]">
-                      {selectedItem?.unit || "-"}
-                    </div>
-                  </div>
+                  <Input 
+                    type="number" 
+                    value={searchQty} 
+                    onChange={(e) => setSearchQty(e.target.value)} 
+                    className="h-10 text-center font-bold"
+                  />
+                </div>
+
+                <div className="w-32">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Unidade</Label>
+                  <Select value={searchUnit} onValueChange={setSearchUnit}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIT_OPTIONS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="w-32">
@@ -449,61 +485,102 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
               </div>
             </TabsContent>
 
-            {/* Aba 4: Precificação */}
-            <TabsContent value="precificacao" className="m-0 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">Custo Total da Receita</Label>
-                  <p className="text-3xl font-black text-[#002B5B]">{formatCurrency(totalRecipeCost)}</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase text-muted-foreground">Sua Meta de CMV (%)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input 
-                      type="number" 
-                      value={targetCmv} 
-                      onChange={(e) => setTargetCmv(e.target.value)}
-                      className="h-12 text-xl font-bold"
-                    />
-                    <span className="text-xl font-bold text-muted-foreground">%</span>
-                  </div>
-                </div>
-
-                <Card className="bg-[#002B5B] text-white border-none shadow-xl">
+            {/* Aba 4: Precificação Estratégica */}
+            <TabsContent value="precificacao" className="m-0 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Bloco 1: O Custo */}
+                <Card className="border-border/40 bg-muted/5 shadow-none">
                   <CardContent className="p-6">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest opacity-80">Preço Sugerido</Label>
-                    <p className="text-3xl font-black mt-1">{formatCurrency(suggestedPrice)}</p>
-                    <p className="text-[10px] mt-2 opacity-70">Baseado na sua meta de {targetCmv}%</p>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">1. O Custo</Label>
+                    <div className="mt-4 space-y-1">
+                      <p className="text-xs text-muted-foreground">Custo Total da Receita</p>
+                      <p className="text-2xl font-black text-[#002B5B]">{formatCurrency(totalRecipeCost)}</p>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-border/40 flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <Info className="h-3 w-3" /> Bloqueado para edição
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Bloco 2: A Sugestão */}
+                <Card className="border-border/40 bg-muted/5 shadow-none">
+                  <CardContent className="p-6">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">2. A Sugestão</Label>
+                    <div className="mt-4 space-y-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Meta de CMV (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={targetCmv} 
+                          onChange={(e) => setTargetCmv(e.target.value)}
+                          className="h-9 font-bold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">Preço Sugerido</p>
+                        <p className="text-xl font-bold text-primary">{formatCurrency(suggestedPrice)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Bloco 3: Sua Decisão */}
+                <Card className="border-[#002B5B]/30 bg-[#002B5B]/5 shadow-lg">
+                  <CardContent className="p-6">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-[#002B5B]">3. Sua Decisão</Label>
+                    <div className="mt-4 space-y-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold">Preço de Venda Aplicado (R$)</Label>
+                        <Input 
+                          placeholder="R$ 0,00"
+                          value={formatAppliedPrice(appliedPrice)}
+                          onChange={(e) => handlePriceChange(e.target.value)}
+                          className="h-12 text-xl font-black font-mono border-[#002B5B]/40 focus-visible:ring-[#002B5B]"
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        Este é o valor que será impresso no seu cardápio físico e digital.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Bloco 4: Resultado Estratégico */}
+                <Card className={cn(
+                  "border-none shadow-xl text-white transition-colors duration-500",
+                  realCmv <= 0 ? "bg-slate-400" : (realCmv <= parseFloat(targetCmv) ? "bg-emerald-600" : "bg-red-600")
+                )}>
+                  <CardContent className="p-6">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest opacity-80">4. Resultado Estratégico</Label>
+                    <div className="mt-4 space-y-4">
+                      <div className="space-y-1">
+                        <p className="text-xs opacity-90">CMV Real da Ficha</p>
+                        <p className="text-3xl font-black">{realCmv.toFixed(1)}%</p>
+                      </div>
+                      
+                      {classification && (
+                        <div className="pt-4 border-t border-white/20 flex items-center gap-3">
+                          <span className="text-3xl">{classification.emoji}</span>
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-tighter opacity-80">Status Dinâmico</p>
+                            <p className="text-lg font-black uppercase tracking-tighter leading-none">{classification.label}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t">
-                <div className="space-y-4">
-                  <Label className="text-sm font-bold">Preço de Venda Aplicado (R$)</Label>
-                  <Input 
-                    placeholder="R$ 0,00"
-                    value={formatAppliedPrice(appliedPrice)}
-                    onChange={(e) => handlePriceChange(e.target.value)}
-                    className="h-14 text-2xl font-black font-mono"
-                  />
-                  <p className="text-xs text-muted-foreground">Este é o preço que será exibido no seu cardápio.</p>
+              {/* Alerta de Margem */}
+              {realCmv > parseFloat(targetCmv) && (
+                <div className="bg-red-50 border border-red-100 p-4 rounded-xl flex gap-3 items-center text-red-800">
+                  <AlertTriangle className="h-5 w-5 shrink-0" />
+                  <p className="text-sm font-medium">
+                    Atenção: Seu CMV Real está <strong>{(realCmv - parseFloat(targetCmv)).toFixed(1)}% acima</strong> da meta. Isso indica erosão de lucro.
+                  </p>
                 </div>
-
-                {classification && (
-                  <Card className={cn("border-none shadow-none", classification.color)}>
-                    <CardContent className="p-6 flex items-center gap-6">
-                      <span className="text-5xl">{classification.emoji}</span>
-                      <div>
-                        <Label className="text-[10px] font-bold uppercase tracking-widest opacity-70">Diagnóstico da Engenharia</Label>
-                        <p className="text-2xl font-black uppercase tracking-tighter">{classification.label}</p>
-                        <p className="text-sm font-bold mt-1">CMV Real: {realCmv.toFixed(1)}%</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              )}
             </TabsContent>
           </div>
         </Tabs>
