@@ -25,13 +25,13 @@ const INITIAL_RECIPES = [
     photoUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=100&h=100&fit=crop",
     ingredients: [], 
     packaging: [], 
-    instructions: "Grelhar a carne por 3 minutos de cada lado...", 
+    instructions: "Grelhar a carne por 3 minutes de cada lado...", 
     targetCmv: "25", 
     appliedPrice: "3500", 
     unitCost: 8.50, 
     price: 35.00, 
     cmv: 24.2, 
-    status: { label: "Tesouro", emoji: "👑", color: "bg-[#002B5B]/10 text-[#002B5B] border-[#002B5B]/20" },
+    status: { label: "Tesouro", emoji: "👑", color: "bg-primary/10 text-primary border-primary/20" },
     isActive: true 
   },
   { 
@@ -111,12 +111,12 @@ export default function Receitas() {
     <div className="space-y-8 animate-in fade-in duration-700 w-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Fichas Técnicas & Engenharia de Cardápio</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Fichas Técnicas & Engenharia de Cardápio</h1>
           <p className="text-muted-foreground">Descubra os pratos que são tesouros e corte as âncoras que afundam o seu cardápio.</p>
         </div>
         <Button 
           onClick={() => { setEditingRecipe(null); setIsModalOpen(true); }} 
-          className="bg-[#002B5B] hover:bg-[#001f3f] text-white font-bold h-11 px-6 transition-all shadow-lg shadow-blue-900/20"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-6 transition-all shadow-lg"
         >
           <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
         </Button>
@@ -128,9 +128,9 @@ export default function Receitas() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <span className="text-2xl">👑</span>
-              <Badge variant="outline" className="bg-[#002B5B] text-white border-none">{stats.tesouros}</Badge>
+              <Badge variant="outline" className="bg-primary text-primary-foreground border-none">{stats.tesouros}</Badge>
             </div>
-            <CardTitle className="text-sm font-bold uppercase tracking-wider mt-2">Tesouro</CardTitle>
+            <CardTitle className="text-sm font-bold uppercase tracking-wider mt-2 text-primary">Tesouro</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
@@ -188,7 +188,7 @@ export default function Receitas() {
       {/* Tabela de Cardápio */}
       <Card className="border-border/40 shadow-sm overflow-hidden">
         <CardHeader className="bg-muted/20 border-b border-border/40 flex flex-row items-center justify-between space-y-0 py-4">
-          <CardTitle className="text-sm font-bold uppercase tracking-widest">Análise de Performance do Cardápio</CardTitle>
+          <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary">Análise de Performance do Cardápio</CardTitle>
           <div className="relative w-64">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
@@ -234,7 +234,7 @@ export default function Receitas() {
                           <AvatarImage src={recipe.photoUrl} />
                           <AvatarFallback className="bg-muted"><ChefHat className="h-5 w-5 text-muted-foreground" /></AvatarFallback>
                         </Avatar>
-                        <span className="font-bold text-sm group-hover:text-[#002B5B] transition-colors">{recipe.name}</span>
+                        <span className="font-bold text-sm group-hover:text-primary transition-colors">{recipe.name}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">

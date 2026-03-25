@@ -11,7 +11,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
     
-    /* Azul Encorpado #002B5B -> HSL(211, 100%, 18%) */
+    /* Azul Encorpado #002B5B */
     --primary: 211 100% 18%;
     --primary-foreground: 210 40% 98%;
     
@@ -38,11 +38,11 @@
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 211 100% 18%;
     --metric-red: 0 84% 60%;
-    --metric-cyan: 211 100% 18%; /* Substituído por Primary */
+    --metric-cyan: 211 100% 18%;
     --metric-gold: 45 86% 53%;
     --metric-orange: 24 95% 53%;
 
-    --brand-cyan: 211 100% 18%; /* Eliminado ciano */
+    --brand-cyan: 211 100% 18%;
     --brand-royal: 211 100% 18%;
   }
  
@@ -54,16 +54,18 @@
     --popover: 222 39% 23%;
     --popover-foreground: 210 40% 98%;
     
-    /* Azul Encorpado no Dark Mode (levemente mais claro para contraste) */
-    --primary: 211 100% 35%;
+    /* Revertido para Azul (tom ajustado para visibilidade no escuro) */
+    --primary: 211 100% 35%; 
     --primary-foreground: 210 40% 98%;
     
-    --secondary: 215 20% 65%;
+    --secondary: 222 31% 29%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 222 39% 23%;
+    --muted: 222 31% 29%;
     --muted-foreground: 215 20% 65%;
+    
     --accent: 211 100% 35%;
     --accent-foreground: 210 40% 98%;
+    
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
     --success: 142.1 70.6% 45.3%;
@@ -71,11 +73,12 @@
     --border: 222 31% 29%;
     --input: 222 31% 29%;
     --ring: 211 100% 35%;
+    
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 211 100% 35%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 222 39% 23%;
+    --sidebar-accent: 222 31% 29%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 222 31% 29%;
     --sidebar-ring: 211 100% 35%;
@@ -91,12 +94,16 @@
     @apply bg-background text-foreground;
   }
 
-  /* Padronização Global de Títulos */
   h1 {
     @apply text-primary font-bold;
   }
   
   h2 {
     @apply text-primary font-semibold;
+  }
+
+  /* Revertido para padrão do tema */
+  .dark input, .dark textarea, .dark select {
+    @apply text-foreground placeholder:text-muted-foreground;
   }
 }
