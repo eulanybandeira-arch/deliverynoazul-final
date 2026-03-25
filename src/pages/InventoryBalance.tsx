@@ -100,10 +100,10 @@ export default function InventoryBalance() {
     <div className="space-y-8 animate-in fade-in duration-700 w-full px-2">
       <header className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Diagnóstico de CMV Real</h1>
-        <p className="text-muted-foreground">Apuração técnica baseada na movimentação física de estoque (EI + C - EF).</p>
+        <p className="text-muted-foreground">Apuração técnica baseada na movimentação física de estoque (Estoque Inicial + Compra - Estoque Final).</p>
       </header>
 
-      {/* 1. Parâmetros de Cálculo (Barra Horizontal Full Width) */}
+      {/* 1. Parâmetros de Cálculo */}
       <Card className="border-border/40 shadow-sm bg-card/50 w-full">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
@@ -168,19 +168,29 @@ export default function InventoryBalance() {
 
       {isCalculated ? (
         <>
-          {/* 2. O Diagnóstico Visual (Cards Estruturados) */}
+          {/* 2. O Diagnóstico Visual */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
             <Card className={cn(
-              "md:col-span-1 border-none shadow-lg transition-all duration-500 flex flex-col justify-center items-center p-8 min-h-[220px] text-white",
-              diagnosis.isSuccess ? "bg-[#002B5B]" : "bg-[#991b1b]"
+              "md:col-span-1 shadow-lg transition-all duration-500 flex flex-col justify-center items-center p-8 min-h-[220px]",
+              diagnosis.isSuccess 
+                ? "bg-[#002B5B] text-white border-none dark:bg-card dark:border-[#002B5B] dark:border-2" 
+                : "bg-[#991b1b] text-white border-none dark:bg-card dark:border-[#991b1b] dark:border-2"
             )}>
               <div className="text-center space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">CMV Real do Período</p>
-                <div className="text-6xl font-black tracking-tighter">
-                  {diagnosis.realCMV_Percent.toFixed(2)}%
+                <p className={cn(
+                  "text-[10px] font-bold uppercase tracking-[0.2em] opacity-80",
+                  diagnosis.isSuccess ? "dark:text-[#002B5B]" : "dark:text-[#991b1b]"
+                )}>
+                  CMV Real do Período
+                </p>
+                <div className={cn(
+                  "text-6xl font-black tracking-tighter",
+                  diagnosis.isSuccess ? "dark:text-[#002B5B]" : "dark:text-[#991b1b]"
+                )}>
+                  {diagnosis.realCMV_Percent.toFixed(1)}%
                 </div>
-                <p className="text-xs font-bold uppercase tracking-wider bg-white/20 py-1 px-3 rounded-full inline-block">
-                  Meta: {diagnosis.targetNum.toFixed(2)}%
+                <p className="text-xs font-bold uppercase tracking-wider bg-white/20 dark:bg-muted py-1 px-3 rounded-full inline-block">
+                  Meta: {diagnosis.targetNum.toFixed(1)}%
                 </p>
               </div>
               <div className="mt-4">
@@ -214,7 +224,10 @@ export default function InventoryBalance() {
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-muted-foreground">{diagnosis.targetNum.toFixed(1)}%</span>
                   <span className="text-sm text-muted-foreground">vs.</span>
-                  <span className={cn("text-2xl font-bold", diagnosis.isSuccess ? "text-[#002B5B]" : "text-[#991b1b]")}>
+                  <span className={cn(
+                    "text-2xl font-bold", 
+                    diagnosis.isSuccess ? "text-[#002B5B]" : "text-[#991b1b]"
+                  )}>
                     {diagnosis.realCMV_Percent.toFixed(1)}%
                   </span>
                 </div>
@@ -222,7 +235,10 @@ export default function InventoryBalance() {
               <CardContent>
                 <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden mt-2">
                   <div 
-                    className={cn("h-full transition-all duration-1000", diagnosis.isSuccess ? "bg-[#002B5B]" : "bg-[#991b1b]")}
+                    className={cn(
+                      "h-full transition-all duration-1000", 
+                      diagnosis.isSuccess ? "bg-[#002B5B]" : "bg-[#991b1b]"
+                    )}
                     style={{ width: `${Math.min(diagnosis.realCMV_Percent, 100)}%` }}
                   />
                 </div>
@@ -230,7 +246,7 @@ export default function InventoryBalance() {
             </Card>
           </div>
 
-          {/* 3. Raio-X Detalhado (Tabela Full Width) */}
+          {/* 3. Raio-X Detalhado */}
           <Card className="border-border/40 shadow-sm overflow-hidden w-full">
             <CardHeader className="border-b border-border/40 bg-muted/20">
               <CardTitle className="text-sm font-bold uppercase tracking-widest">Raio-X de Movimentação Financeira</CardTitle>
