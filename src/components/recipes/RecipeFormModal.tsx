@@ -9,19 +9,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Camera, Search, Trash2, Plus, AlertCircle, CheckCircle2, Info, Package, Layers, BookOpen } from "lucide-react";
-import { useInventory } from "@/hooks/useInventory";
-import { usePrepBases } from "@/hooks/usePrepBases";
-import { useRecipes } from "@/hooks/useRecipes";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+// --- MOCK DATA PARA TESTE DE USABILIDADE ---
+const MOCK_INSUMOS = [
+  { id: "i1", name: "Pão Brioche", unit: "un", unitPrice: 1.50 },
+  { id: "i2", name: "Carne Bovina", unit: "kg", unitPrice: 35.00 },
+  { id: "i3", name: "Queijo Cheddar", unit: "kg", unitPrice: 40.00 },
+];
+
+const MOCK_EMBALAGENS = [
+  { id: "e1", name: "Caixa de Hambúrguer", unit: "un", unitPrice: 1.20 },
+  { id: "e2", name: "Sacola Kraft", unit: "un", unitPrice: 0.80 },
+];
+
 interface RecipeItem {
   id: string;
-  type: 'insumo' | 'base' | 'receita';
   name: string;
   quantity: number;
   unit: string;
+  unitPrice: number;
   cost: number;
 }
 
@@ -32,10 +41,6 @@ interface RecipeFormModalProps {
 }
 
 export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalProps) {
-  const { items: inventoryItems } = useInventory();
-  const { items: prepBases } = usePrepBases();
-  const { recipes } = useRecipes();
-
   // Identidade
   const [name, setName] = useState("");
   const [yieldAmount, setYieldAmount] = useState("1");
@@ -43,39 +48,29 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Abas
+  // Listas de Itens
   const [ingredients, setIngredients] = useState<RecipeItem[]>([]);
   const [packaging, setPackaging] = useState<RecipeItem[]>([]);
   const [instructions, setInstructions] = useState("");
   
+  // Busca e Adição
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQty, setSearchQty] = useState("1");
+  const [showResults, setShowResults] = useState(false);
+
   // Precificação
   const [targetCmv, setTargetCmv] = useState("30");
   const [appliedPrice, setAppliedPrice] = useState("");
 
-  // Busca Unificada
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showResults, setShowResults] = useState(false);
-
-  const filteredResults = useMemo(() => {
-    if (!searchTerm) return [];
-    const term = searchTerm.toLowerCase();
-    
-    const results: any[] = [
-      ...inventoryItems.filter(i => i.name.toLowerCase().includes(term)).map(i => ({ ...i, type: 'insumo' })),
-      ...prepBases.filter(b => b.name.toLowerCase().includes(term)).map(b => ({ ...b, type: 'base' })),
-      ...recipes.filter(r => r.name.toLowerCase().includes(term)).map(r => ({ ...r, type: 'receita' }))
-    ];
-    
-    return results.slice(0, 8);
-  }, [searchTerm, inventoryItems, prepBases, recipes]);
-
+  // Cálculos Dinâmicos
   const totalIngredientsCost = useMemo(() => ingredients.reduce((sum, i) => sum + i.cost, 0), [ingredients]);
   const totalPackagingCost = useMemo(() => packaging.reduce((sum, i) => sum + i.cost, 0), [packaging]);
   const totalRecipeCost = totalIngredientsCost + totalPackagingCost;
 
   const suggestedPrice = useMemo(() => {
     const cmv = parseFloat(targetCmv) || 30;
-    return totalRecipeCost / (cmv / 100);
+    if (totalRecipeCost === 0) return 0;
+    return (totalRecipeCost / cmv) * 100;
   }, [totalRecipeCost, targetCmv]);
 
   const realCmv = useMemo(() => {
@@ -91,33 +86,36 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
     return { label: "Âncora", emoji: "⚓", color: "text-slate-600 bg-slate-50" };
   }, [realCmv]);
 
+  // Handlers
   const handleAddItem = (item: any, isPackaging: boolean = false) => {
-    const cost = item.cost_per_stock_unit || item.unit_cost || 0;
+    const qty = parseFloat(searchQty) || 1;
     const newItem: RecipeItem = {
       id: crypto.randomUUID(),
-      type: item.type,
       name: item.name,
-      quantity: 1,
-      unit: item.stock_unit || item.yield_unit || 'un',
-      cost: cost
+      quantity: qty,
+      unit: item.unit,
+      unitPrice: item.unitPrice,
+      cost: qty * item.unitPrice
     };
 
     if (isPackaging) setPackaging([...packaging, newItem]);
     else setIngredients([...ingredients, newItem]);
     
     setSearchTerm("");
+    setSearchQty("1");
     setShowResults(false);
+    toast.success(`${item.name} adicionado.`);
   };
 
-  const handleSave = () => {
-    if (!name) {
-      toast.error("Dê um nome para a receita.");
-      return;
-    }
-    onSave({
-      name, yieldAmount, yieldUnit, ingredients, packaging, instructions, targetCmv, appliedPrice
-    });
-    onOpenChange(false);
+  const handlePriceChange = (value: string) => {
+    const numeric = value.replace(/\D/g, "");
+    setAppliedPrice(numeric);
+  };
+
+  const formatAppliedPrice = (numeric: string) => {
+    if (!numeric) return "";
+    const val = parseInt(numeric) / 100;
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
   return (
@@ -193,35 +191,44 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
           <div className="flex-1 overflow-y-auto p-6">
             {/* Aba 1: Composição */}
             <TabsContent value="composicao" className="m-0 space-y-6">
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-4">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Buscar Insumos, Bases ou outras Fichas..." 
-                    value={searchTerm}
-                    onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }}
-                    className="flex-1"
-                  />
-                </div>
-                
-                {showResults && filteredResults.length > 0 && (
-                  <div className="absolute z-50 w-full bg-popover border rounded-xl shadow-2xl mt-1 overflow-hidden">
-                    {filteredResults.map((item) => (
-                      <button 
-                        key={item.id} 
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent text-left transition-colors border-b last:border-0"
-                        onClick={() => handleAddItem(item)}
-                      >
-                        {item.type === 'insumo' ? <Package className="h-4 w-4 text-blue-400" /> : item.type === 'base' ? <Layers className="h-4 w-4 text-amber-400" /> : <BookOpen className="h-4 w-4 text-primary" />}
-                        <div className="flex-1">
-                          <p className="text-sm font-bold">{item.name}</p>
-                          <p className="text-[10px] uppercase text-muted-foreground">{item.type}</p>
-                        </div>
-                        <span className="text-xs font-mono">{formatCurrency(item.cost_per_stock_unit || item.unit_cost || 0)}</span>
-                      </button>
-                    ))}
+              <div className="flex gap-3 items-end">
+                <div className="flex-1 relative">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block">Buscar Insumo</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Ex: Pão, Carne..." 
+                      value={searchTerm}
+                      onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }}
+                      className="pl-10"
+                    />
                   </div>
-                )}
+                  
+                  {showResults && searchTerm && (
+                    <div className="absolute z-50 w-full bg-popover border rounded-xl shadow-2xl mt-1 overflow-hidden">
+                      {MOCK_INSUMOS.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
+                        <button 
+                          key={item.id} 
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-accent text-left transition-colors border-b last:border-0"
+                          onClick={() => handleAddItem(item)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Package className="h-4 w-4 text-blue-400" />
+                            <span className="text-sm font-bold">{item.name}</span>
+                          </div>
+                          <span className="text-xs font-mono text-muted-foreground">{formatCurrency(item.unitPrice)} / {item.unit}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="w-24">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block">Qtd.</Label>
+                  <Input type="number" value={searchQty} onChange={(e) => setSearchQty(e.target.value)} />
+                </div>
+                <Button className="bg-[#002B5B] hover:bg-[#001f3f]">
+                  <Plus className="h-4 w-4 mr-2" /> Adicionar
+                </Button>
               </div>
 
               <div className="rounded-xl border overflow-hidden">
@@ -242,18 +249,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                         <TableRow key={ing.id}>
                           <TableCell className="font-medium">{ing.name}</TableCell>
                           <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Input 
-                                type="number" 
-                                value={ing.quantity} 
-                                onChange={(e) => {
-                                  const q = parseFloat(e.target.value) || 0;
-                                  setIngredients(ingredients.map(i => i.id === ing.id ? { ...i, quantity: q, cost: q * (i.cost / i.quantity) } : i));
-                                }}
-                                className="w-20 h-8 text-center" 
-                              />
-                              <span className="text-xs text-muted-foreground">{ing.unit}</span>
-                            </div>
+                            <span className="text-sm">{ing.quantity} {ing.unit}</span>
                           </TableCell>
                           <TableCell className="text-right font-mono">{formatCurrency(ing.cost)}</TableCell>
                           <TableCell>
@@ -278,29 +274,39 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                 </p>
               </div>
 
-              <div className="relative">
-                <Input 
-                  placeholder="Buscar Embalagens..." 
-                  onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }}
-                  className="flex-1"
-                />
-                {showResults && filteredResults.length > 0 && (
-                  <div className="absolute z-50 w-full bg-popover border rounded-xl shadow-2xl mt-1 overflow-hidden">
-                    {filteredResults.filter(i => i.category_logistics === 'embalagens_utensilios' || i.type === 'insumo').map((item) => (
-                      <button 
-                        key={item.id} 
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent text-left transition-colors border-b last:border-0"
-                        onClick={() => handleAddItem(item, true)}
-                      >
-                        <Package className="h-4 w-4 text-blue-400" />
-                        <div className="flex-1">
-                          <p className="text-sm font-bold">{item.name}</p>
-                        </div>
-                        <span className="text-xs font-mono">{formatCurrency(item.cost_per_stock_unit || item.unit_cost || 0)}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="flex gap-3 items-end">
+                <div className="flex-1 relative">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block">Buscar Embalagem</Label>
+                  <Input 
+                    placeholder="Ex: Caixa, Sacola..." 
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }}
+                  />
+                  {showResults && searchTerm && (
+                    <div className="absolute z-50 w-full bg-popover border rounded-xl shadow-2xl mt-1 overflow-hidden">
+                      {MOCK_EMBALAGENS.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
+                        <button 
+                          key={item.id} 
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-accent text-left transition-colors border-b last:border-0"
+                          onClick={() => handleAddItem(item, true)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Package className="h-4 w-4 text-blue-400" />
+                            <span className="text-sm font-bold">{item.name}</span>
+                          </div>
+                          <span className="text-xs font-mono text-muted-foreground">{formatCurrency(item.unitPrice)} / {item.unit}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="w-24">
+                  <Label className="text-[10px] font-bold uppercase mb-1.5 block">Qtd.</Label>
+                  <Input type="number" value={searchQty} onChange={(e) => setSearchQty(e.target.value)} />
+                </div>
+                <Button className="bg-[#002B5B] hover:bg-[#001f3f]">
+                  <Plus className="h-4 w-4 mr-2" /> Adicionar
+                </Button>
               </div>
 
               <div className="rounded-xl border overflow-hidden">
@@ -321,18 +327,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                         <TableRow key={pkg.id}>
                           <TableCell className="font-medium">{pkg.name}</TableCell>
                           <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Input 
-                                type="number" 
-                                value={pkg.quantity} 
-                                onChange={(e) => {
-                                  const q = parseFloat(e.target.value) || 0;
-                                  setPackaging(packaging.map(p => p.id === pkg.id ? { ...p, quantity: q, cost: q * (p.cost / p.quantity) } : p));
-                                }}
-                                className="w-20 h-8 text-center" 
-                              />
-                              <span className="text-xs text-muted-foreground">{pkg.unit}</span>
-                            </div>
+                            <span className="text-sm">{pkg.quantity} {pkg.unit}</span>
                           </TableCell>
                           <TableCell className="text-right font-mono">{formatCurrency(pkg.cost)}</TableCell>
                           <TableCell>
@@ -396,8 +391,8 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                   <Label className="text-sm font-bold">Preço de Venda Aplicado (R$)</Label>
                   <Input 
                     placeholder="R$ 0,00"
-                    value={appliedPrice === "" ? "" : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(appliedPrice.replace(/\D/g, "")) / 100)}
-                    onChange={(e) => setAppliedPrice(e.target.value.replace(/\D/g, ""))}
+                    value={formatAppliedPrice(appliedPrice)}
+                    onChange={(e) => handlePriceChange(e.target.value)}
                     className="h-14 text-2xl font-black font-mono"
                   />
                   <p className="text-xs text-muted-foreground">Este é o preço que será exibido no seu cardápio.</p>
