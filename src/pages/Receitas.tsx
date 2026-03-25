@@ -9,16 +9,16 @@ import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { useRecipes } from "@/hooks/useRecipes";
 import { formatCurrency } from "@/utils/pricing";
 import { cn } from "@/lib/utils";
-import { RecipeWizardModal } from "@/components/recipes/RecipeWizardModal";
+import { RecipeFormModal } from "@/components/recipes/RecipeFormModal";
 import { toast } from "sonner";
 
 export default function Receitas() {
   const navigate = useNavigate();
   const { recipes, loading, deleteRecipe, saveRecipe } = useRecipes();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Lógica de Engenharia de Cardápio (Matriz de Boston adaptada para Gastronomia)
+  // Lógica de Engenharia de Cardápio
   const analyzedRecipes = useMemo(() => {
     return recipes.map(recipe => {
       const totalCost = recipe.ingredients.reduce((sum, ing) => sum + ing.usedValue, 0) + 
@@ -27,7 +27,6 @@ export default function Receitas() {
       const price = recipe.suggested_price || (unitCost * (1 + (recipe.profitMargin / 100)));
       const cmv = price > 0 ? (unitCost / price) * 100 : 0;
       
-      // Mock de popularidade (em um cenário real viria do volume de vendas)
       const mockPopularity = (parseInt(recipe.id.slice(-1)) || 5) > 5 ? "Alta Venda" : "Baixa Venda";
       const profitStatus = cmv <= 30 ? "Alto" : "Baixo";
 
@@ -58,26 +57,33 @@ export default function Receitas() {
     };
   }, [analyzedRecipes]);
 
-  const handleSaveNewRecipe = async (data: any) => {
+  const handleSaveRecipe = async (data: any) => {
     try {
+      const price = parseFloat(data.appliedPrice.replace(/\D/g, "")) / 100 || 0;
       const recipeToSave = {
         name: data.name,
-        yield: data.yield,
-        profitMargin: ((data.price - data.unitCost) / data.unitCost) * 100,
+        yield: parseFloat(data.yieldAmount),
+        profit_margin: price > 0 ? ((price - (data.ingredients.reduce((s:any, i:any) => s + i.cost, 0) + data.packaging.reduce((s:any, i:any) => s + i.cost, 0))) / price) * 100 : 0,
         ingredients: data.ingredients.map((ing: any) => ({
           id: ing.id,
           name: ing.name,
-          packageQty: 1, // Simplificado para o wizard
+          packageQty: 1,
           unit: ing.unit,
           unitPrice: ing.cost / ing.quantity,
           usedQty: ing.quantity,
           usedValue: ing.cost,
-          inventoryItemId: ing.inventoryItemId
+          inventoryItemId: ing.type === 'insumo' ? ing.id : null
         })),
-        packaging: [],
-        appFee: 0,
-        cardFee: 0,
-        taxFee: 0,
+        packaging: data.packaging.map((pkg: any) => ({
+          id: pkg.id,
+          name: pkg.name,
+          packageQty: 1,
+          unit: pkg.unit,
+          packagePrice: pkg.cost / pkg.quantity,
+          usedQty: pkg.quantity,
+          usedValue: pkg.cost,
+          inventoryItemId: pkg.id
+        })),
         status: 'published'
       };
 
@@ -95,21 +101,20 @@ export default function Receitas() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 w-full">
-      {/* Header Estratégico */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Fichas Técnicas & Engenharia</h1>
           <p className="text-muted-foreground">Descubra os pratos que são tesouros e corte as âncoras que afundam o seu cardápio.</p>
         </div>
         <Button 
-          onClick={() => setIsWizardOpen(true)} 
+          onClick={() => setIsModalOpen(true)} 
           className="bg-[#002B5B] hover:bg-[#001f3f] text-white font-bold h-11 px-6 transition-all shadow-lg shadow-blue-900/20"
         >
           <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
         </Button>
       </div>
 
-      {/* Painel de Diagnóstico (4 Cards) */}
+      {/* Painel de Diagnóstico */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-none shadow-sm bg-card/50">
           <CardHeader className="pb-2">
@@ -254,10 +259,10 @@ export default function Receitas() {
         </CardContent>
       </Card>
 
-      <RecipeWizardModal 
-        open={isWizardOpen} 
-        onOpenChange={setIsWizardOpen}
-        onSave={handleSaveNewRecipe}
+      <RecipeFormModal 
+        open={isModalOpen} 
+        onOpenChange={setIsModalOpen}
+        onSave={handleSaveRecipe}
       />
     </div>
   );
