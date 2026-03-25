@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle } from "lucide-react";
+import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Lightbulb } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -209,7 +209,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
             
             <div className="flex-1 space-y-4">
               <div className="grid gap-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nome da Receita</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Fichas Técnicas & Engenharia de Cardápio</Label>
                 <Input 
                   value={name} 
                   onChange={(e) => setName(e.target.value)}
@@ -528,6 +528,9 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
                           onChange={(e) => setTargetCmv(e.target.value)}
                           className="h-9 font-bold"
                         />
+                        <p className="text-[10px] text-muted-foreground italic leading-tight mt-1">
+                          💡 Regra de Ouro: Para garantir a meta do mês, mire 5% abaixo do seu alvo global. (Ex: Se a meta do restaurante é 30%, tente precificar este prato com 25% para cobrir perdas e desperdícios da cozinha).
+                        </p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs text-muted-foreground">Preço Sugerido</p>
