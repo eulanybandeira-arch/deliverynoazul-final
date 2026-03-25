@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Lightbulb } from "lucide-react";
+import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Lightbulb, Printer } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -181,6 +181,98 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
       name, yieldAmount, yieldUnit, salesVolume, ingredients, packaging, instructions, targetCmv, appliedPrice
     });
     onOpenChange(false);
+  };
+
+  // Lógica de Impressão Operacional (Cozinha)
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const ingredientsHtml = ingredients.map(ing => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${ing.name}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${ing.quantity}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${ing.unit}</td>
+      </tr>
+    `).join('');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Ficha Técnica - ${name}</title>
+          <style>
+            body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #002B5B; padding-bottom: 20px; margin-bottom: 30px; }
+            .title-area h1 { margin: 0; color: #002B5B; font-size: 28px; text-transform: uppercase; }
+            .title-area p { margin: 5px 0 0; font-weight: bold; color: #666; }
+            .photo-area { width: 150px; height: 150px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
+            .photo-area img { max-width: 100%; max-height: 100%; object-fit: cover; }
+            .section { margin-bottom: 30px; }
+            .section-title { font-size: 14px; font-weight: bold; text-transform: uppercase; color: #002B5B; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 15px; letter-spacing: 1px; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #f4f4f4; text-align: left; padding: 8px; font-size: 12px; text-transform: uppercase; }
+            .instructions { white-space: pre-wrap; font-size: 14px; background: #fdfdfd; padding: 15px; border-radius: 4px; border: 1px solid #f0f0f0; }
+            .notes-area { margin-top: 40px; border-top: 1px dashed #ccc; padding-top: 10px; }
+            .dotted-line { border-bottom: 1px dotted #aaa; height: 30px; margin-bottom: 10px; }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title-area">
+              <h1>${name || 'Sem Nome'}</h1>
+              <p>Rendimento: ${yieldAmount} ${yieldUnit}</p>
+            </div>
+            <div class="photo-area">
+              ${photoUrl ? `<img src="${photoUrl}" />` : '<span style="color: #ccc; font-size: 10px;">SEM FOTO</span>'}
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Ingredientes e Quantidades</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Insumo</th>
+                  <th style="text-align: center;">Qtd.</th>
+                  <th style="text-align: center;">Unidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ingredientsHtml || '<tr><td colspan="3" style="text-align: center; padding: 20px; color: #999;">Nenhum ingrediente listado.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Modo de Preparo</div>
+            <div class="instructions">${instructions || 'Nenhuma instrução de preparo cadastrada.'}</div>
+          </div>
+
+          <div class="notes-area">
+            <div class="section-title">Anotações do Chef</div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+          </div>
+
+          <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #aaa;">
+            Gerado por DeliveryNoAzul - Ficha Técnica Operacional
+          </div>
+
+          <script>
+            window.onload = () => {
+              window.print();
+              window.onafterprint = () => window.close();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
@@ -603,14 +695,24 @@ export function RecipeFormModal({ open, onOpenChange, onSave }: RecipeFormModalP
 
         {/* Rodapé Fixo */}
         <DialogFooter className="p-6 border-t bg-muted/5 shrink-0">
-          <div className="flex justify-end gap-3 w-full">
-            <Button variant="ghost" onClick={() => onOpenChange(false)} className="font-bold">Cancelar</Button>
+          <div className="flex justify-between items-center w-full">
             <Button 
-              onClick={handleSave} 
-              className="bg-[#002B5B] hover:bg-[#001f3f] font-bold px-8 h-11 shadow-lg shadow-blue-900/20"
+              variant="outline" 
+              onClick={handlePrint}
+              className="font-bold border-[#002B5B] text-[#002B5B] hover:bg-[#002B5B]/5"
             >
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Salvar Ficha Técnica
+              <Printer className="h-4 w-4 mr-2" /> Imprimir Ficha (Cozinha)
             </Button>
+            
+            <div className="flex gap-3">
+              <Button variant="ghost" onClick={() => onOpenChange(false)} className="font-bold">Cancelar</Button>
+              <Button 
+                onClick={handleSave} 
+                className="bg-[#002B5B] hover:bg-[#001f3f] font-bold px-8 h-11 shadow-lg shadow-blue-900/20"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Salvar Ficha Técnica
+              </Button>
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>

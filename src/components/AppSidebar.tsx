@@ -117,7 +117,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {renderMenuItem({ title: "Precificação de Receita", url: "/receitas", icon: Calculator })}
+              {renderMenuItem({ title: "Fichas Técnicas & Engenharia de Cardápio", url: "/receitas", icon: Calculator })}
               {renderMenuItem({ title: "Base de Preparo", url: "/bases-preparo", icon: Layers })}
               {renderMenuItem({ title: "Fichas Técnicas", url: "/receitas/biblioteca", icon: BookOpen })}
               {renderMenuItem({ title: "Desperdícios", url: "/desperdicios", icon: AlertTriangle })}

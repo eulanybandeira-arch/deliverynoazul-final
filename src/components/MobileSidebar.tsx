@@ -104,7 +104,7 @@ export function MobileSidebar() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-3 mb-1">
                 Financeiro e Custos
               </p>
-              {renderItem({ title: "Precificação de Receita", url: "/receitas", icon: Calculator })}
+              {renderItem({ title: "Fichas Técnicas & Engenharia de Cardápio", url: "/receitas", icon: Calculator })}
               {renderItem({ title: "Base de Preparo", url: "/bases-preparo", icon: Layers })}
               {renderItem({ title: "Fichas Técnicas", url: "/receitas/biblioteca", icon: BookOpen })}
               {renderItem({ title: "Desperdícios", url: "/desperdicios", icon: AlertTriangle })}
