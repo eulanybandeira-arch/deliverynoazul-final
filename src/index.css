@@ -106,4 +106,42 @@
   .dark input, .dark textarea, .dark select {
     @apply text-foreground placeholder:text-muted-foreground;
   }
+
+  /* Estilização Customizada de Botões para Dark Mode */
+
+  /* 1. Botões Ghost (Perfil, Sidebar, etc) - Sem bordas, apenas fundo suave no hover */
+  .dark button[class*="ghost"],
+  .dark [role="menuitem"],
+  .dark button.hover\:bg-muted\/50 {
+    border: none !important;
+    background-color: transparent;
+  }
+
+  .dark button[class*="ghost"]:hover,
+  .dark button.hover\:bg-muted\/50:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* 2. Botões Vazados (Outline) e Padrão no Dark Mode */
+  /* Forçamos texto branco e borda branca suave por padrão */
+  .dark button:not([class*="ghost"]):not([class*="link"]) {
+    @apply bg-transparent border-white/20 text-white transition-all duration-200;
+  }
+
+  /* Sobrescreve classes utilitárias de cor primária para manter o padrão branco no estado inicial */
+  .dark button.text-primary:not(:hover) {
+    color: white !important;
+  }
+  .dark button.border-primary:not(:hover) {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  /* 3. Efeito ao Selecionar/Hover - Fica Azul (Cor Primária) */
+  .dark button:not([class*="ghost"]):not([class*="link"]):hover,
+  .dark button:not([class*="ghost"]):not([class*="link"])[data-state="open"],
+  .dark button:not([class*="ghost"]):not([class*="link"])[data-active="true"] {
+    background-color: hsl(var(--primary)) !important;
+    border-color: hsl(var(--primary)) !important;
+    color: white !important;
+  }
 }
