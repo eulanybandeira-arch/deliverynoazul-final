@@ -16,7 +16,8 @@ import {
   Smartphone,
   MessageSquare,
   UtensilsCrossed,
-  Zap
+  Zap,
+  Bike
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/pricing";
@@ -25,10 +26,13 @@ interface ChannelFees {
   id: string;
   name: string;
   icon: any;
-  baseCommission: number;
+  baseCommission?: number;
   transactionFee: number;
-  campaigns: number;
-  monthlyFee: number;
+  campaigns?: number;
+  monthlyFee?: number;
+  discounts?: number; // Para Salão
+  motoboyCost?: number; // Para Delivery Próprio
+  deliveryFeeCharged?: number; // Para Delivery Próprio
 }
 
 const INITIAL_CHANNELS: ChannelFees[] = [
@@ -37,7 +41,8 @@ const INITIAL_CHANNELS: ChannelFees[] = [
   { id: "99food", name: "99Food", icon: Smartphone, baseCommission: 25, transactionFee: 3.2, campaigns: 0, monthlyFee: 0 },
   { id: "aiqfome", name: "Aiqfome", icon: Smartphone, baseCommission: 12, transactionFee: 3.5, campaigns: 0, monthlyFee: 0 },
   { id: "rappi", name: "Rappi", icon: Smartphone, baseCommission: 15, transactionFee: 3.5, campaigns: 5, monthlyFee: 0 },
-  { id: "proprio", name: "Salão / WhatsApp / Próprio", icon: UtensilsCrossed, baseCommission: 0, transactionFee: 2, campaigns: 0, monthlyFee: 0 },
+  { id: "salao", name: "Salão / Balcão", icon: UtensilsCrossed, transactionFee: 2, discounts: 0 },
+  { id: "delivery-proprio", name: "Delivery Próprio", icon: Bike, transactionFee: 2, motoboyCost: 10, deliveryFeeCharged: 7, campaigns: 0 },
 ];
 
 const MOCK_RECIPES = [
@@ -61,8 +66,21 @@ export default function Marketplaces() {
 
   const analysisData = useMemo(() => {
     return MOCK_RECIPES.map(recipe => {
-      const totalFeePercent = selectedChannel.baseCommission + selectedChannel.transactionFee + selectedChannel.campaigns;
-      const erosionValue = recipe.price * (totalFeePercent / 100);
+      let totalFeePercent = 0;
+      let fixedErosion = 0;
+
+      if (selectedChannel.id === 'delivery-proprio') {
+        totalFeePercent = selectedChannel.transactionFee + (selectedChannel.campaigns || 0);
+        // Subsídio logístico: Custo Motoboy - Taxa Cobrada
+        const freightSubsidy = Math.max(0, (selectedChannel.motoboyCost || 0) - (selectedChannel.deliveryFeeCharged || 0));
+        fixedErosion = freightSubsidy;
+      } else if (selectedChannel.id === 'salao') {
+        totalFeePercent = selectedChannel.transactionFee + (selectedChannel.discounts || 0);
+      } else {
+        totalFeePercent = (selectedChannel.baseCommission || 0) + selectedChannel.transactionFee + (selectedChannel.campaigns || 0);
+      }
+
+      const erosionValue = (recipe.price * (totalFeePercent / 100)) + fixedErosion;
       const contributionValue = recipe.price - recipe.cost - erosionValue;
       const contributionPercent = (contributionValue / recipe.price) * 100;
 
@@ -75,7 +93,9 @@ export default function Marketplaces() {
         erosionValue,
         contributionValue,
         contributionPercent,
-        bcg
+        bcg,
+        totalFeePercent,
+        fixedErosion
       };
     });
   }, [selectedChannel]);
@@ -101,59 +121,142 @@ export default function Marketplaces() {
             </CardHeader>
             <CardContent className="pt-6 space-y-5">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Comissão Base</Label>
-                  <div className="flex items-center gap-1.5">
-                    <Input 
-                      type="number" 
-                      value={channel.baseCommission} 
-                      onChange={(e) => handleUpdateFee(channel.id, 'baseCommission', e.target.value)}
-                      className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50 focus-visible:ring-primary/30"
-                    />
-                    <span className="text-xs font-bold text-muted-foreground">%</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transação/Maquininha</Label>
-                  <div className="flex items-center gap-1.5">
-                    <Input 
-                      type="number" 
-                      value={channel.transactionFee} 
-                      onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
-                      className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50 focus-visible:ring-primary/30"
-                    />
-                    <span className="text-xs font-bold text-muted-foreground">%</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campanhas/Cupons</Label>
-                  <div className="flex items-center gap-1.5">
-                    <Input 
-                      type="number" 
-                      value={channel.campaigns} 
-                      onChange={(e) => handleUpdateFee(channel.id, 'campaigns', e.target.value)}
-                      className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50 focus-visible:ring-primary/30"
-                    />
-                    <span className="text-xs font-bold text-muted-foreground">%</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-3 border-t border-border/20">
-                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mensalidade Fixa</Label>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-muted-foreground">R$</span>
-                    <Input 
-                      type="number" 
-                      value={channel.monthlyFee} 
-                      onChange={(e) => handleUpdateFee(channel.id, 'monthlyFee', e.target.value)}
-                      className="h-8 w-20 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50 focus-visible:ring-primary/30"
-                    />
-                  </div>
-                </div>
+                {/* Campos Dinâmicos por Canal */}
+                {channel.id === 'salao' ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Maquininha</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Input 
+                          type="number" 
+                          value={channel.transactionFee} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Descontos/Fidelidade</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Input 
+                          type="number" 
+                          value={channel.discounts} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'discounts', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </>
+                ) : channel.id === 'delivery-proprio' ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Gateway/Pagto</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Input 
+                          type="number" 
+                          value={channel.transactionFee} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custo Motoboy</Label>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground">R$</span>
+                        <Input 
+                          type="number" 
+                          value={channel.motoboyCost} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'motoboyCost', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Entrega Cobrada</Label>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground">R$</span>
+                        <Input 
+                          type="number" 
+                          value={channel.deliveryFeeCharged} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'deliveryFeeCharged', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campanhas/Cupons</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Input 
+                          type="number" 
+                          value={channel.campaigns} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'campaigns', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Comissão Base</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Input 
+                          type="number" 
+                          value={channel.baseCommission} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'baseCommission', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transação/Maquininha</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Input 
+                          type="number" 
+                          value={channel.transactionFee} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campanhas/Cupons</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Input 
+                          type="number" 
+                          value={channel.campaigns} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'campaigns', e.target.value)}
+                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-border/20">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mensalidade Fixa</Label>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground">R$</span>
+                        <Input 
+                          type="number" 
+                          value={channel.monthlyFee} 
+                          onChange={(e) => handleUpdateFee(channel.id, 'monthlyFee', e.target.value)}
+                          className="h-8 w-20 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
             <CardFooter className="bg-slate-50/30 dark:bg-muted/10 py-3">
               <Button variant="ghost" size="sm" className="w-full text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
-                <Settings2 className="h-3 w-3 mr-2" /> Editar Taxas
+                <Settings2 className="h-3 w-3 mr-2" /> Configurar
               </Button>
             </CardFooter>
           </Card>
@@ -208,7 +311,13 @@ export default function Marketplaces() {
                       <div className="flex flex-col items-end">
                         <span className="font-bold text-destructive text-sm">-{formatCurrency(item.erosionValue)}</span>
                         <span className="text-[10px] text-destructive/70 font-bold uppercase tracking-tighter">
-                          {(selectedChannel.baseCommission + selectedChannel.transactionFee + selectedChannel.campaigns).toFixed(1)}% em taxas
+                          {selectedChannel.id === 'delivery-proprio' ? (
+                            <>
+                              {item.totalFeePercent.toFixed(1)}% taxas + {formatCurrency(item.fixedErosion)} frete
+                            </>
+                          ) : (
+                            <>{item.totalFeePercent.toFixed(1)}% em taxas</>
+                          )}
                         </span>
                       </div>
                     </TableCell>
@@ -236,7 +345,12 @@ export default function Marketplaces() {
             <Zap className="h-4 w-4 text-primary" />
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <span className="font-bold text-primary uppercase tracking-wider">Dica de Engenharia:</span> Se um prato virou <span className="font-bold text-slate-500">⚓ Âncora</span> neste canal, considere aumentar o preço apenas nesta plataforma ou criar um combo exclusivo para diluir a erosão das taxas.
+            <span className="font-bold text-primary uppercase tracking-wider">Dica de Engenharia:</span> 
+            {selectedChannel.id === 'delivery-proprio' ? (
+              " No Delivery Próprio, a erosão oculta está no frete. Se o custo do motoboy é maior que a taxa cobrada, você está subsidiando a entrega com sua margem de lucro."
+            ) : (
+              " Se um prato virou Âncora neste canal, considere aumentar o preço apenas nesta plataforma ou criar um combo exclusivo para diluir a erosão das taxas."
+            )}
           </p>
         </div>
       </div>
