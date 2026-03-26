@@ -41,13 +41,28 @@ export function NewCountModal({ open, onOpenChange, onConfirm }: NewCountModalPr
         <div className="py-4 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="inventory-date">Data do Inventário</Label>
-            <Input
-              id="inventory-date"
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="text-muted-foreground"
-            />
+            <div className="relative">
+              <style>{`
+                #inventory-date::-webkit-calendar-picker-indicator {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100%;
+                  height: 100%;
+                  margin: 0;
+                  padding: 0;
+                  cursor: pointer;
+                  opacity: 0;
+                }
+              `}</style>
+              <Input
+                id="inventory-date"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="text-muted-foreground font-medium cursor-pointer"
+              />
+            </div>
           </div>
           <p className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
             <strong>Atenção:</strong> Ao começar, qualquer contagem pendente não salva será descartada para iniciar o novo período.
