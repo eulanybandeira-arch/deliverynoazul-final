@@ -8,37 +8,37 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ShoppingCart, FileSpreadsheet, CheckCircle2, Filter, CalendarIcon, FileDown, Save } from "lucide-react";
+import { ShoppingCart, FileSpreadsheet, CheckCircle2, Filter, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSuppliers } from "@/hooks/useSuppliers";
-import { useInventory } from "@/hooks/useInventory";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
+
+const MOCK_ITEMS = [
+  { id: "1", name: "Picanha Argentina", category: "Carnes", supplier: "Frigorífico Boi de Ouro", unit: "kg", currentStock: 12.5, cmd: 4.2, includeLeadTime: true, finalOrder: 0 },
+  { id: "2", name: "Queijo Mussarela", category: "Laticínios", supplier: "Distribuidora Silva", unit: "kg", currentStock: 8.0, cmd: 3.5, includeLeadTime: true, finalOrder: 0 },
+  { id: "3", name: "Tomate Italiano", category: "Hortifruti", supplier: "Hortifruti Central", unit: "kg", currentStock: 5.0, cmd: 10.2, includeLeadTime: true, finalOrder: 0 },
+];
+
+const CATEGORIES = ["Carnes", "Hortifruti", "Laticínios", "Secos", "Embalagens", "Limpeza"];
 
 export default function ListaCompras() {
   const { suppliers } = useSuppliers();
-  const { items: inventoryItems } = useInventory();
+  const [items, setItems] = useState(MOCK_ITEMS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [globalDaysToKeep, setGlobalDaysToKeep] = useState(7);
   const [globalLeadTime, setGlobalLeadTime] = useState(2);
 
+  // Estados dos Filtros
   const [filterType, setFilterType] = useState<"category" | "supplier">("category");
   const [filterValue, setFilterValue] = useState("all");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
-  const CATEGORIES = useMemo(() => {
-    const cats = new Set(inventoryItems.map(i => i.category_logistics).filter(Boolean));
-    return Array.from(cats);
-  }, [inventoryItems]);
-
   const calculateSuggested = (item: any) => {
-    // Simulação de CMD (Consumo Médio Diário) baseada no estoque atual para o exemplo
-    const cmd = item.current_stock / 10 || 1; 
     const effectiveLeadTime = filterType === 'supplier' ? globalLeadTime : 0;
-    const needed = cmd * (globalDaysToKeep + effectiveLeadTime);
-    const suggestion = needed - item.current_stock;
+    const needed = item.cmd * (globalDaysToKeep + effectiveLeadTime);
+    const suggestion = needed - item.currentStock;
     return suggestion > 0 ? Math.ceil(suggestion * 10) / 10 : 0;
   };
 
@@ -47,48 +47,35 @@ export default function ListaCompras() {
       return CATEGORIES.map(c => ({ id: c, name: c }));
     }
     return suppliers.map(s => ({ id: s.name, name: s.name }));
-  }, [filterType, suppliers, CATEGORIES]);
+  }, [filterType, suppliers]);
 
   const filteredItems = useMemo(() => {
-    let list = inventoryItems;
-    if (filterValue !== "all") {
-      list = list.filter(item => {
-        if (filterType === "category") return item.category_logistics === filterValue;
-        return item.brand === filterValue; // Usando brand como proxy de fornecedor no mock
-      });
-    }
-    return list;
-  }, [inventoryItems, filterType, filterValue]);
-
-  const handleExportExcel = () => {
-    toast.success("Lista exportada para Excel com sucesso!");
-  };
-
-  const handleExportPDF = () => {
-    toast.success("Relatório PDF gerado e baixado!");
-  };
-
-  const handleSaveList = () => {
-    toast.success("Contagem e parâmetros salvos para esta categoria.");
-  };
+    if (filterValue === "all") return items;
+    return items.filter(item => {
+      if (filterType === "category") return item.category === filterValue;
+      return item.supplier === filterValue;
+    });
+  }, [items, filterType, filterValue]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Lista de Compras Inteligente</h1>
           <p className="text-muted-foreground">Parametrize seu estoque de segurança e confirme o pedido final.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/5" onClick={handleExportExcel}>
+          <Button variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/5">
             <FileSpreadsheet className="h-4 w-4" /> Exportar Excel
           </Button>
-          <Button className="gap-2 shadow-md bg-primary hover:bg-primary/90" onClick={handleExportPDF}>
-            <FileDown className="h-4 w-4" /> Finalizar e Gerar PDF
+          <Button className="gap-2 shadow-md bg-primary hover:bg-primary/90">
+            <ShoppingCart className="h-4 w-4" /> Finalizar e Gerar PDF
           </Button>
         </div>
       </div>
 
+      {/* BARRA DE FILTROS COM PERÍODO */}
       <div className="flex flex-col lg:flex-row items-center gap-4 bg-card/40 backdrop-blur-sm p-3 rounded-2xl border border-border/40 w-full lg:w-fit">
         <div className="flex bg-muted/50 rounded-full p-1 border border-border/20 shrink-0">
           <button 
@@ -157,20 +144,16 @@ export default function ListaCompras() {
         </div>
       </div>
 
+      {/* CARDS DE PARÂMETROS COM RENDERIZAÇÃO CONDICIONAL E MICROCOPY */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className={cn(
           "p-6 md:p-8 grid gap-12",
           filterType === 'supplier' ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-xs font-bold text-primary uppercase">Dias de Cobertura Desejada</Label>
-                <p className="text-[10px] text-muted-foreground font-medium">Qtd. de dias que o estoque deve durar até a próxima compra.</p>
-              </div>
-              <Button size="sm" className="gap-2" onClick={handleSaveList}>
-                <Save className="h-3.5 w-3.5" /> Salvar
-              </Button>
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-primary uppercase">Dias de Cobertura Desejada</Label>
+              <p className="text-[10px] text-muted-foreground font-medium">Qtd. de dias que o estoque deve durar até a próxima compra.</p>
             </div>
             <Input 
               type="number" 
@@ -197,6 +180,7 @@ export default function ListaCompras() {
         </CardContent>
       </Card>
 
+      {/* TABELA */}
       <div className="rounded-xl border border-border/50 shadow-sm overflow-hidden bg-card">
         <Table>
           <TableHeader className="bg-muted/30">
@@ -205,14 +189,13 @@ export default function ListaCompras() {
               <TableHead className="font-bold text-primary text-xs uppercase">Insumo</TableHead>
               <TableHead className="font-bold text-primary text-xs uppercase text-center">Estoque Atual</TableHead>
               <TableHead className="font-bold text-primary text-xs uppercase text-center">Sugerido</TableHead>
-              <TableHead className="font-bold text-primary text-xs uppercase text-center">Unidade</TableHead>
               <TableHead className="font-bold text-primary text-xs uppercase text-center w-[160px]">Qtd. Comprar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic">
+                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">
                   Nenhum item encontrado para este filtro.
                 </TableCell>
               </TableRow>
@@ -234,20 +217,17 @@ export default function ListaCompras() {
                     <div className="flex flex-col">
                       <span className="font-bold text-foreground">{item.name}</span>
                       <span className="text-[10px] text-muted-foreground uppercase font-medium">
-                        {item.category_logistics}
+                        {item.category} • {item.supplier}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center font-medium text-sm">{item.current_stock} {item.stock_unit}</TableCell>
+                  <TableCell className="text-center font-medium text-sm">{item.currentStock} {item.unit}</TableCell>
                   <TableCell className="text-center">
                     {calculateSuggested(item) > 0 ? (
                       <span className="text-base font-bold text-primary">{calculateSuggested(item)}</span>
                     ) : (
                       <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
                     )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className="font-bold">{item.stock_unit || 'un'}</Badge>
                   </TableCell>
                   <TableCell className="px-4">
                     <div className="flex justify-center">
