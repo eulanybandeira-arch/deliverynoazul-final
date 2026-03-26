@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Edit, Trash2, Search, MoreVertical, Printer, ChefHat } from "lucide-react";
+import { Plus, Edit, Trash2, Search, MoreVertical, Printer, ChefHat, Wand2 } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { cn } from "@/lib/utils";
 import { RecipeFormModal } from "@/components/recipes/RecipeFormModal";
+import { AIImportModal } from "@/components/recipes/AIImportModal";
 import { toast } from "sonner";
 
 // Dados iniciais para teste
@@ -59,6 +60,7 @@ export default function Receitas() {
   const [recipesList, setRecipesList] = useState(INITIAL_RECIPES);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<any>(null);
 
   const filteredRecipes = useMemo(() => {
@@ -88,6 +90,13 @@ export default function Receitas() {
     setEditingRecipe(null);
   };
 
+  const handleAiProcessComplete = (data: any) => {
+    setIsAiModalOpen(false);
+    setEditingRecipe(data);
+    setIsModalOpen(true);
+    toast.success("Receita extraída com sucesso!");
+  };
+
   const handleDelete = (id: string) => {
     if (confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
       setRecipesList(prev => prev.filter(r => r.id !== id));
@@ -114,12 +123,21 @@ export default function Receitas() {
           <h1 className="text-3xl font-bold tracking-tight">Fichas Técnicas & Engenharia de Cardápio</h1>
           <p className="text-muted-foreground">Descubra os pratos que são tesouros e corte as âncoras que afundam o seu cardápio.</p>
         </div>
-        <Button 
-          onClick={() => { setEditingRecipe(null); setIsModalOpen(true); }} 
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-6 transition-all shadow-lg"
-        >
-          <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline"
+            onClick={() => setIsAiModalOpen(true)}
+            className="border-primary/20 text-primary hover:bg-primary/5 font-bold h-11 px-6 transition-all"
+          >
+            <span className="mr-2">🪄</span> Importar Ficha Técnica com IA
+          </Button>
+          <Button 
+            onClick={() => { setEditingRecipe(null); setIsModalOpen(true); }} 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-6 transition-all shadow-lg"
+          >
+            <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
+          </Button>
+        </div>
       </div>
 
       {/* Painel de Diagnóstico */}
@@ -295,6 +313,12 @@ export default function Receitas() {
         onOpenChange={setIsModalOpen}
         onSave={handleSaveRecipe}
         initialData={editingRecipe}
+      />
+
+      <AIImportModal 
+        open={isAiModalOpen}
+        onOpenChange={setIsAiModalOpen}
+        onProcessComplete={handleAiProcessComplete}
       />
     </div>
   );

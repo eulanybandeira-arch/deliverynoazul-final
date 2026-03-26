@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Lightbulb, Printer } from "lucide-react";
+import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Lightbulb, Printer, Check } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -72,6 +72,9 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
   const [targetCmv, setTargetCmv] = useState("30");
   const [appliedPrice, setAppliedPrice] = useState("");
 
+  // Estado de IA
+  const [isAiProcessed, setIsAiProcessed] = useState(false);
+
   // Reset/Load data
   useEffect(() => {
     if (open) {
@@ -86,6 +89,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
         setInstructions(initialData.instructions || "");
         setTargetCmv(String(initialData.targetCmv || "30"));
         setAppliedPrice(String(initialData.appliedPrice || ""));
+        setIsAiProcessed(initialData.isAiProcessed || false);
       } else {
         setName("");
         setYieldAmount("1");
@@ -97,6 +101,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
         setInstructions("");
         setTargetCmv("30");
         setAppliedPrice("");
+        setIsAiProcessed(false);
       }
     }
   }, [open, initialData]);
@@ -223,7 +228,8 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
       unitCost: totalRecipeCost / (parseFloat(yieldAmount) || 1),
       cmv: realCmv,
       status: classification,
-      isActive: initialData ? initialData.isActive : true
+      isActive: initialData ? initialData.isActive : true,
+      isAiProcessed: false // Reset state after saving
     };
 
     onSave(recipeData);
@@ -324,6 +330,19 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[90vh] p-0 flex flex-col gap-0 overflow-hidden border-none shadow-2xl">
+        {/* Banner de Alerta IA */}
+        {isAiProcessed && (
+          <div className="bg-[#2dceb6]/10 border-b border-[#2dceb6]/20 p-3 px-6 flex items-center gap-3 animate-in slide-in-from-top duration-500">
+            <div className="bg-[#2dceb6] rounded-full p-1">
+              <Check className="h-3 w-3 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#1a7a6c]">Ficha Técnica processada por IA.</p>
+              <p className="text-xs text-[#1a7a6c]/80">Por favor, revise os ingredientes e quantidades antes de salvar.</p>
+            </div>
+          </div>
+        )}
+
         {/* Cabeçalho Fixo */}
         <div className="p-6 border-b bg-muted/10 shrink-0">
           <div className="flex items-start gap-6">
@@ -406,6 +425,15 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
           <div className="flex-1 overflow-y-auto p-6">
             {/* Aba 1: Composição */}
             <TabsContent value="composicao" className="m-0 space-y-6">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Lista de Ingredientes</Label>
+                {isAiProcessed && (
+                  <Badge className="bg-[#2dceb6] hover:bg-[#2dceb6] text-white border-none text-[10px] font-bold px-2 py-0.5">
+                    ✓ {ingredients.length} ingredientes encontrados
+                  </Badge>
+                )}
+              </div>
+
               <div className="flex items-end gap-2 bg-muted/20 p-3 rounded-xl border border-border/50">
                 <div className="flex-[2] relative">
                   <Label className="text-[10px] font-bold uppercase mb-1.5 block text-muted-foreground">Buscar Insumo / Base</Label>
@@ -484,7 +512,12 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
                     ) : (
                       ingredients.map((ing) => (
                         <TableRow key={ing.id}>
-                          <TableCell className="font-medium">{ing.name}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {isAiProcessed && <Check className="h-3.5 w-3.5 text-[#2dceb6]" />}
+                              {ing.name}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-center gap-2">
                               <Input 
@@ -597,7 +630,12 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
                     ) : (
                       packaging.map((pkg) => (
                         <TableRow key={pkg.id}>
-                          <TableCell className="font-medium">{pkg.name}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {isAiProcessed && <Check className="h-3.5 w-3.5 text-[#2dceb6]" />}
+                              {pkg.name}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-center gap-2">
                               <Input 
