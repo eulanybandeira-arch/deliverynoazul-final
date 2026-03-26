@@ -6,11 +6,7 @@ import {
   BarChart3, 
   Calculator, 
   Layers, 
-  BookOpen, 
   AlertTriangle, 
-  Landmark, 
-  GaugeCircle, 
-  Archive, 
   MessageSquare, 
   Settings, 
   Lock 
@@ -119,10 +115,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {renderMenuItem({ title: "Fichas Técnicas & Engenharia de Cardápio", url: "/receitas", icon: Calculator })}
               {renderMenuItem({ title: "Base de Preparo", url: "/bases-preparo", icon: Layers })}
-              {renderMenuItem({ title: "Fichas Técnicas", url: "/receitas/biblioteca", icon: BookOpen })}
               {renderMenuItem({ title: "Desperdícios", url: "/desperdicios", icon: AlertTriangle })}
-              {renderMenuItem({ title: "Despesas Fixas", url: "/analise", icon: BarChart3 })}
-              {renderMenuItem({ title: "Fluxo de Caixa", url: "/fluxo-caixa", icon: Landmark })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -133,8 +126,6 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {renderMenuItem({ title: "Métricas do Negócio", url: "/metricas", icon: GaugeCircle })}
-              {renderMenuItem({ title: "Equipamentos", url: "/equipamentos", icon: Archive })}
               {renderMenuItem({ title: "Assistente AI", url: "/chat", icon: MessageSquare })}
             </SidebarMenu>
           </SidebarGroupContent>

@@ -9,11 +9,7 @@ import {
   BarChart3,
   Calculator,
   Layers,
-  BookOpen,
   AlertTriangle,
-  Landmark,
-  GaugeCircle,
-  Archive,
   MessageSquare,
   Settings,
   Lock,
@@ -106,10 +102,7 @@ export function MobileSidebar() {
               </p>
               {renderItem({ title: "Fichas Técnicas & Engenharia de Cardápio", url: "/receitas", icon: Calculator })}
               {renderItem({ title: "Base de Preparo", url: "/bases-preparo", icon: Layers })}
-              {renderItem({ title: "Fichas Técnicas", url: "/receitas/biblioteca", icon: BookOpen })}
               {renderItem({ title: "Desperdícios", url: "/desperdicios", icon: AlertTriangle })}
-              {renderItem({ title: "Despesas Fixas", url: "/analise", icon: BarChart3 })}
-              {renderItem({ title: "Fluxo de Caixa", url: "/fluxo-caixa", icon: Landmark })}
             </div>
 
             {/* ESTRATÉGIA */}
@@ -117,8 +110,6 @@ export function MobileSidebar() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-3 mb-1">
                 Estratégia
               </p>
-              {renderItem({ title: "Métricas do Negócio", url: "/metricas", icon: GaugeCircle })}
-              {renderItem({ title: "Equipamentos", url: "/equipamentos", icon: Archive })}
               {renderItem({ title: "Assistente AI", url: "/chat", icon: MessageSquare })}
             </div>
           </nav>
