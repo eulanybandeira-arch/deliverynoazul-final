@@ -6,11 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, CheckCircle2, Search, TrendingUp, AlertTriangle, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Search, TrendingUp, AlertTriangle } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface ManualEntryModalProps {
   open: boolean;
@@ -35,7 +40,7 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
   const { suppliers } = useSuppliers();
   
   const [supplierId, setSupplierId] = useState("");
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
+  const [entryDate, setEntryDate] = useState<Date | undefined>(new Date());
   
   const [items, setItems] = useState<EntryItem[]>([]);
   
@@ -123,15 +128,32 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Data do Recebimento</Label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  type="date" 
-                  value={entryDate} 
-                  onChange={(e) => setEntryDate(e.target.value)}
-                  className="h-11 pl-10"
-                />
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-11 justify-start text-left font-normal text-muted-foreground hover:text-muted-foreground",
+                      !entryDate && "text-muted-foreground"
+                    )}
+                  >
+                    {entryDate ? format(entryDate, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="p-0 w-[var(--radix-popover-trigger-width)]" 
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={entryDate}
+                    onSelect={setEntryDate}
+                    initialFocus
+                    locale={ptBR}
+                    className="w-full"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
