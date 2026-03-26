@@ -50,11 +50,11 @@ export function AppSidebar() {
               e.preventDefault();
               toast.info(TRIAL_MESSAGE);
             }} 
-            className="opacity-60 cursor-not-allowed h-auto py-2 hover:bg-transparent"
+            className="opacity-60 cursor-not-allowed"
           >
             <item.icon className="h-4 w-4 shrink-0" />
-            <span className="leading-tight">{item.title}</span>
-            <Lock className="h-3 w-3 ml-auto text-muted-foreground shrink-0" />
+            <span>{item.title}</span>
+            <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
           </SidebarMenuButton>
         </SidebarMenuItem>
       );
@@ -62,21 +62,19 @@ export function AppSidebar() {
 
     return (
       <SidebarMenuItem key={item.url}>
-        <SidebarMenuButton asChild tooltip={item.title} className="h-auto py-2">
+        <SidebarMenuButton asChild tooltip={item.title}>
           <NavLink
             to={item.url}
             end
             className={({ isActive }) =>
               cn(
-                "transition-all duration-200 flex items-center gap-2 w-full px-2 py-1.5 rounded-md",
-                isActive 
-                  ? "font-bold bg-accent text-accent-foreground" 
-                  : "hover:bg-accent/50 hover:text-accent-foreground"
+                "flex items-center gap-2 w-full",
+                isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
               )
             }
           >
             <item.icon className="h-4 w-4 shrink-0" />
-            <span className="leading-tight">{item.title}</span>
+            <span>{item.title}</span>
           </NavLink>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -84,7 +82,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r sidebar-custom top-14 hidden md:flex">
+    <Sidebar collapsible="icon" className="border-r top-14 hidden md:flex">
       <SidebarHeader>
         <div className="flex items-center justify-end p-2">
           <SidebarTrigger />
@@ -92,14 +90,12 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent>
-        {/* Dashboard isolado no topo */}
         <SidebarGroup>
           <SidebarMenu>
             {renderMenuItem({ title: "Dashboard", url: "/dashboard", icon: Home })}
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* ESTOQUE E COMPRAS */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-2 mb-2">
             Estoque e Compras
@@ -115,7 +111,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* FINANCEIRO E CUSTOS */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-2 mb-2">
             Financeiro e Custos
@@ -132,7 +127,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* ESTRATÉGIA */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-2 mb-2">
             Estratégia
@@ -147,7 +141,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2 border-t border-border/40">
+      <SidebarFooter className="p-2 border-t">
         <SidebarMenu>
           {renderMenuItem({ title: "Configurações", url: "/configuracoes", icon: Settings })}
         </SidebarMenu>

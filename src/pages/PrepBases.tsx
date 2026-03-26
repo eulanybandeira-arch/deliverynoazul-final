@@ -34,7 +34,6 @@ export default function PrepBases() {
     });
   }, [items, search, categoryFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginatedItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const handleDelete = async (item: PrepBase) => {
@@ -46,7 +45,6 @@ export default function PrepBases() {
   const formatCurrency = (value: number | null) =>
     value != null ? `R$${value.toFixed(2).replace(".", ",")}` : "R$0,00";
 
-
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
@@ -56,7 +54,7 @@ export default function PrepBases() {
         <div>
           <h1 className="text-2xl font-bold">Base de Preparo</h1>
           <p className="text-sm text-muted-foreground">
-            A base de preparo é a fundação do seu CMV. Calcular esse custo com exatidão é o que alimenta a sua Ficha Técnica e garante a precisão da margem antes mesmo do prato ser montado.
+            A base de preparo é a fundação do seu CMV. Calcular esse custo com exatidão garante a precisão da margem.
           </p>
         </div>
       </div>
@@ -75,44 +73,24 @@ export default function PrepBases() {
               className="pl-9"
             />
           </div>
-          <Select
-            value={categoryFilter}
-            onValueChange={(v) => {
-              setCategoryFilter(v);
-              setPage(1);
-            }}
-          >
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>
               {PREP_BASE_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setLabelItem({} as PrepBase)}
-            className="hover:bg-[#2dceb6] hover:border-[#2dceb6] hover:text-white transition-colors"
-          >
-            <Tag className="mr-2 h-4 w-4" />
-            Nova Etiqueta
+          <Button variant="outline" onClick={() => setLabelItem({} as PrepBase)}>
+            <Tag className="mr-2 h-4 w-4" /> Nova Etiqueta
           </Button>
-          <Button
-            onClick={() => {
-              setEditingItem(null);
-              setShowForm(true);
-            }}
-            className="hover:bg-[#2dceb6] border-transparent transition-colors"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Receita
+          <Button onClick={() => { setEditingItem(null); setShowForm(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Nova Receita
           </Button>
         </div>
       </div>
@@ -125,48 +103,29 @@ export default function PrepBases() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Package className="mb-4 h-16 w-16 text-muted-foreground/30" />
-            <p className="text-muted-foreground">Ops... Nada aqui!</p>
+            <p className="text-muted-foreground">Nenhuma receita encontrada.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paginatedItems.map((item) => (
-            <Card
-              key={item.id}
-              className="cursor-pointer transition-shadow hover:shadow-md"
-              onClick={() => navigate(`/bases-preparo/${item.id}`)}
-            >
+            <Card key={item.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/bases-preparo/${item.id}`)}>
               <CardContent className="p-4">
                 <div className="mb-3 flex items-start gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted">
-                    {item.photo_url ? (
-                      <img src={item.photo_url} alt={item.name} className="h-12 w-12 rounded-lg object-cover" />
-                    ) : (
-                      <Package className="h-6 w-6 text-muted-foreground" />
-                    )}
+                    <Package className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    {item.category && (
-                      <span className="text-xs font-semibold uppercase text-primary">{item.category}</span>
-                    )}
                     <h3 className="truncate font-semibold">{item.name}</h3>
-                    <p className="truncate text-xs text-muted-foreground">{item.description || ""}</p>
+                    <p className="truncate text-xs text-muted-foreground">{item.category || "Sem categoria"}</p>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => navigate(`/bases-preparo/${item.id}`)}>
                         <Pencil className="mr-2 h-4 w-4" /> Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setLabelItem(item)}>
-                        <Tag className="mr-2 h-4 w-4" /> Nova Etiqueta
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate(`/bases-preparo/${item.id}`)}>
-                        <FileText className="mr-2 h-4 w-4" /> Ficha Técnica
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDelete(item)} className="text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" /> Excluir
@@ -176,21 +135,8 @@ export default function PrepBases() {
                 </div>
                 <div className="space-y-1 border-t pt-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Custo Total:</span>
-                    <span className="font-medium">{formatCurrency(item.total_cost)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Rendimento:</span>
-                    <span className="font-medium">
-                      {item.yield_amount}
-                      {item.yield_unit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Custo Unitário:</span>
-                    <span className="font-semibold">
-                      {formatCurrency(item.unit_cost)} / {item.yield_unit}
-                    </span>
+                    <span className="font-semibold">{formatCurrency(item.unit_cost)} / {item.yield_unit}</span>
                   </div>
                 </div>
               </CardContent>
@@ -199,21 +145,8 @@ export default function PrepBases() {
         </div>
       )}
 
-      {search.trim() && (
-        <div className="flex items-center justify-center text-sm text-muted-foreground">
-          <span>{filtered.length} resultado(s) encontrado(s)</span>
-        </div>
-      )}
-
-      {showForm && <PrepBaseForm open={showForm} onClose={() => setShowForm(false)} editingItem={editingItem} />}
-
-      {labelItem && (
-        <PrepBaseLabelDialog
-          open={!!labelItem}
-          onClose={() => setLabelItem(null)}
-          prepBase={labelItem.id ? labelItem : undefined}
-        />
-      )}
+      {showForm && <PrepBaseForm open={showForm} onClose={() => setShowForm(false)} />}
+      {labelItem && <PrepBaseLabelDialog open={!!labelItem} onClose={() => setLabelItem(null)} prepBase={labelItem.id ? labelItem : undefined} />}
     </div>
   );
 }
