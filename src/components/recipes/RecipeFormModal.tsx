@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Printer, Check, Link as LinkIcon } from "lucide-react";
+import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Printer, Check, Link as LinkIcon, Target, Zap } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -47,53 +47,23 @@ interface RecipeFormModalProps {
   onOpenChange: (open: boolean) => void;
   onSave: (data: any) => void;
   initialData?: any;
-  aiDraftData?: any; // 3. Prop de Hand-off
 }
 
-export function RecipeFormModal({ open, onOpenChange, onSave, initialData, aiDraftData }: RecipeFormModalProps) {
-  const [name, setName] = useState("");
-  const [yieldAmount, setYieldAmount] = useState("1");
-  const [yieldUnit, setYieldUnit] = useState("Porção");
-  const [salesVolume, setSalesVolume] = useState("Alta Venda");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [ingredients, setIngredients] = useState<RecipeItem[]>([]);
-  const [packaging, setPackaging] = useState<RecipeItem[]>([]);
-  const [instructions, setInstructions] = useState("");
-  const [targetCmv, setTargetCmv] = useState("30");
-  const [appliedPrice, setAppliedPrice] = useState("");
-  const [isAiProcessed, setIsAiProcessed] = useState(false);
+export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: RecipeFormModalProps) {
+  // Estados locais inicializados com initialData
+  const [name, setName] = useState(initialData?.name || "");
+  const [yieldAmount, setYieldAmount] = useState(String(initialData?.yieldAmount || "1"));
+  const [yieldUnit, setYieldUnit] = useState(initialData?.yieldUnit || "Porção");
+  const [salesVolume, setSalesVolume] = useState(initialData?.salesVolume || "Alta Venda");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialData?.photoUrl || null);
+  const [ingredients, setIngredients] = useState<RecipeItem[]>(initialData?.ingredients || []);
+  const [packaging, setPackaging] = useState<RecipeItem[]>(initialData?.packaging || []);
+  const [instructions, setInstructions] = useState(initialData?.instructions || "");
+  const [targetCmv, setTargetCmv] = useState(String(initialData?.targetCmv || "30"));
+  const [appliedPrice, setAppliedPrice] = useState(String(initialData?.appliedPrice || ""));
+  const [isAiProcessed] = useState(initialData?.isAiProcessed || false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 3. Inicialização Segura no Formulário
-  useEffect(() => {
-    if (open) {
-      const source = aiDraftData || initialData;
-      if (source) {
-        setName(source.name || "");
-        setYieldAmount(String(source.yieldAmount || "1"));
-        setYieldUnit(source.yieldUnit || "Porção");
-        setSalesVolume(source.salesVolume || "Alta Venda");
-        setPhotoUrl(source.photoUrl || null);
-        setIngredients(source.ingredients || []);
-        setPackaging(source.packaging || []);
-        setInstructions(source.instructions || "");
-        setTargetCmv(String(source.targetCmv || "30"));
-        setAppliedPrice(String(source.appliedPrice || ""));
-        setIsAiProcessed(!!aiDraftData);
-      } else {
-        // Reset para nova ficha manual
-        setName("");
-        setYieldAmount("1");
-        setYieldUnit("Porção");
-        setIngredients([]);
-        setPackaging([]);
-        setInstructions("");
-        setAppliedPrice("");
-        setIsAiProcessed(false);
-      }
-    }
-  }, [open, aiDraftData, initialData]);
 
   // Estados da Barra de Adição Inteligente
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,17 +98,17 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData, aiDra
   }, [totalRecipeCost, appliedPrice]);
 
   const classification = useMemo(() => {
-    if (realCmv <= 0) return { label: "Âncora", emoji: "⚓", color: "bg-slate-500/10 text-slate-600 border-slate-200" };
+    if (realCmv <= 0) return { label: "Âncora", emoji: "⚓", color: "text-slate-600", bgColor: "bg-slate-500/10", borderColor: "border-slate-200", desc: "Baixa Venda | Baixo Lucro" };
     const isHighProfit = realCmv <= (parseFloat(targetCmv) || 30);
     
     if (isHighProfit) {
       return salesVolume === "Alta Venda" 
-        ? { label: "Tesouro", emoji: "👑", color: "bg-[#002B5B]/10 text-[#002B5B] border-[#002B5B]/20" } 
-        : { label: "Pérola Escondida", emoji: "🦪", color: "bg-emerald-500/10 text-emerald-600 border-emerald-200" };
+        ? { label: "Tesouro", emoji: "👑", color: "text-[#002B5B]", bgColor: "bg-[#002B5B]/10", borderColor: "border-[#002B5B]/20", desc: "Alta Venda | Alto Lucro" } 
+        : { label: "Pérola Escondida", emoji: "🦪", color: "text-emerald-600", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-200", desc: "Baixa Venda | Alto Lucro" };
     } else {
       return salesVolume === "Alta Venda" 
-        ? { label: "Vela/Motor", emoji: "⛵", color: "bg-blue-400/10 text-blue-600 border-blue-200" } 
-        : { label: "Âncora", emoji: "⚓", color: "bg-slate-500/10 text-slate-600 border-slate-200" };
+        ? { label: "Vela/Motor", emoji: "⛵", color: "text-blue-600", bgColor: "bg-blue-400/10", borderColor: "border-blue-200", desc: "Alta Venda | Baixo Lucro" } 
+        : { label: "Âncora", emoji: "⚓", color: "text-slate-600", bgColor: "bg-slate-500/10", borderColor: "border-slate-200", desc: "Baixa Venda | Baixo Lucro" };
     }
   }, [realCmv, targetCmv, salesVolume]);
 
@@ -508,7 +478,61 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData, aiDra
               </div>
             </TabsContent>
 
-            <TabsContent value="precificacao" className="m-0 space-y-6">
+            <TabsContent value="precificacao" className="m-0 space-y-8">
+              {/* Diagnóstico de Engenharia de Cardápio (BCG) */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  <h3 className="text-sm font-bold uppercase tracking-widest">Diagnóstico de Engenharia de Cardápio</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className={cn(
+                    "border-2 transition-all duration-300",
+                    classification.label === "Tesouro" ? "border-[#002B5B] bg-[#002B5B]/5 shadow-md" : "border-border/40 opacity-40 grayscale"
+                  )}>
+                    <CardContent className="p-4 text-center space-y-1">
+                      <span className="text-2xl">👑</span>
+                      <p className="text-xs font-black uppercase tracking-tighter text-[#002B5B]">Tesouro</p>
+                      <p className="text-[9px] text-muted-foreground leading-tight">Alta Venda | Alto Lucro</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={cn(
+                    "border-2 transition-all duration-300",
+                    classification.label === "Vela/Motor" ? "border-blue-500 bg-blue-50 shadow-md" : "border-border/40 opacity-40 grayscale"
+                  )}>
+                    <CardContent className="p-4 text-center space-y-1">
+                      <span className="text-2xl">⛵</span>
+                      <p className="text-xs font-black uppercase tracking-tighter text-blue-600">Vela/Motor</p>
+                      <p className="text-[9px] text-muted-foreground leading-tight">Alta Venda | Baixo Lucro</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={cn(
+                    "border-2 transition-all duration-300",
+                    classification.label === "Pérola Escondida" ? "border-emerald-500 bg-emerald-50 shadow-md" : "border-border/40 opacity-40 grayscale"
+                  )}>
+                    <CardContent className="p-4 text-center space-y-1">
+                      <span className="text-2xl">🦪</span>
+                      <p className="text-xs font-black uppercase tracking-tighter text-emerald-600">Pérola</p>
+                      <p className="text-[9px] text-muted-foreground leading-tight">Baixa Venda | Alto Lucro</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={cn(
+                    "border-2 transition-all duration-300",
+                    classification.label === "Âncora" ? "border-slate-500 bg-slate-50 shadow-md" : "border-border/40 opacity-40 grayscale"
+                  )}>
+                    <CardContent className="p-4 text-center space-y-1">
+                      <span className="text-2xl">⚓</span>
+                      <p className="text-xs font-black uppercase tracking-tighter text-slate-600">Âncora</p>
+                      <p className="text-[9px] text-muted-foreground leading-tight">Baixa Venda | Baixo Lucro</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="border-border/40 bg-muted/5 shadow-none">
                   <CardContent className="p-6">
@@ -559,15 +583,13 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData, aiDra
                         <p className="text-xs opacity-90">CMV Real da Ficha</p>
                         <p className="text-3xl font-black">{realCmv.toFixed(1)}%</p>
                       </div>
-                      {classification && (
-                        <div className="pt-4 border-t border-white/20 flex items-center gap-3">
-                          <span className="text-3xl">{classification.emoji}</span>
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-tighter opacity-80">Status Dinâmico</p>
-                            <p className="text-lg font-black uppercase tracking-tighter leading-none">{classification.label}</p>
-                          </div>
+                      <div className="pt-4 border-t border-white/20 flex items-center gap-3">
+                        <span className="text-3xl">{classification.emoji}</span>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-tighter opacity-80">Status Dinâmico</p>
+                          <p className="text-lg font-black uppercase tracking-tighter leading-none">{classification.label}</p>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
