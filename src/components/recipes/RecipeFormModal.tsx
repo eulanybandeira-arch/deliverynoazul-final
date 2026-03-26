@@ -47,23 +47,53 @@ interface RecipeFormModalProps {
   onOpenChange: (open: boolean) => void;
   onSave: (data: any) => void;
   initialData?: any;
+  aiDraftData?: any; // 3. Prop de Hand-off
 }
 
-export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: RecipeFormModalProps) {
-  // Estados locais inicializados com initialData
-  const [name, setName] = useState(initialData?.name || "");
-  const [yieldAmount, setYieldAmount] = useState(String(initialData?.yieldAmount || "1"));
-  const [yieldUnit, setYieldUnit] = useState(initialData?.yieldUnit || "Porção");
-  const [salesVolume, setSalesVolume] = useState(initialData?.salesVolume || "Alta Venda");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(initialData?.photoUrl || null);
-  const [ingredients, setIngredients] = useState<RecipeItem[]>(initialData?.ingredients || []);
-  const [packaging, setPackaging] = useState<RecipeItem[]>(initialData?.packaging || []);
-  const [instructions, setInstructions] = useState(initialData?.instructions || "");
-  const [targetCmv, setTargetCmv] = useState(String(initialData?.targetCmv || "30"));
-  const [appliedPrice, setAppliedPrice] = useState(String(initialData?.appliedPrice || ""));
-  const [isAiProcessed] = useState(initialData?.isAiProcessed || false);
+export function RecipeFormModal({ open, onOpenChange, onSave, initialData, aiDraftData }: RecipeFormModalProps) {
+  const [name, setName] = useState("");
+  const [yieldAmount, setYieldAmount] = useState("1");
+  const [yieldUnit, setYieldUnit] = useState("Porção");
+  const [salesVolume, setSalesVolume] = useState("Alta Venda");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [ingredients, setIngredients] = useState<RecipeItem[]>([]);
+  const [packaging, setPackaging] = useState<RecipeItem[]>([]);
+  const [instructions, setInstructions] = useState("");
+  const [targetCmv, setTargetCmv] = useState("30");
+  const [appliedPrice, setAppliedPrice] = useState("");
+  const [isAiProcessed, setIsAiProcessed] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 3. Inicialização Segura no Formulário
+  useEffect(() => {
+    if (open) {
+      const source = aiDraftData || initialData;
+      if (source) {
+        setName(source.name || "");
+        setYieldAmount(String(source.yieldAmount || "1"));
+        setYieldUnit(source.yieldUnit || "Porção");
+        setSalesVolume(source.salesVolume || "Alta Venda");
+        setPhotoUrl(source.photoUrl || null);
+        setIngredients(source.ingredients || []);
+        setPackaging(source.packaging || []);
+        setInstructions(source.instructions || "");
+        setTargetCmv(String(source.targetCmv || "30"));
+        setAppliedPrice(String(source.appliedPrice || ""));
+        setIsAiProcessed(!!aiDraftData);
+      } else {
+        // Reset para nova ficha manual
+        setName("");
+        setYieldAmount("1");
+        setYieldUnit("Porção");
+        setIngredients([]);
+        setPackaging([]);
+        setInstructions("");
+        setAppliedPrice("");
+        setIsAiProcessed(false);
+      }
+    }
+  }, [open, aiDraftData, initialData]);
 
   // Estados da Barra de Adição Inteligente
   const [searchTerm, setSearchTerm] = useState("");
@@ -179,14 +209,6 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
       return;
     }
     
-    const unlinkedCount = ingredients.filter(i => i.isLinked === false).length;
-    if (unlinkedCount > 0) {
-      toast.error(`Existem ${unlinkedCount} insumos não vinculados ao banco.`, {
-        description: "Vincule ou cadastre os itens para garantir a precisão do custo."
-      });
-      return;
-    }
-
     const recipeData = {
       id: initialData?.id || crypto.randomUUID(),
       name,
@@ -208,7 +230,6 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
     };
 
     onSave(recipeData);
-    onOpenChange(false);
   };
 
   return (

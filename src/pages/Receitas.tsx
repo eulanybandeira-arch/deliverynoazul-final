@@ -34,48 +34,24 @@ const INITIAL_RECIPES = [
     status: { label: "Tesouro", emoji: "👑", color: "bg-primary/10 text-primary border-primary/20" },
     isActive: true 
   },
-  { 
-    id: "2", 
-    name: "Batata Frita G", 
-    yieldAmount: "1", 
-    yieldUnit: "Porção", 
-    salesVolume: "Alta Venda", 
-    photoUrl: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=100&h=100&fit=crop",
-    ingredients: [], 
-    packaging: [], 
-    instructions: "Fritar a 180 graus até dourar.", 
-    targetCmv: "30", 
-    appliedPrice: "1800", 
-    unitCost: 6.20, 
-    price: 18.00, 
-    cmv: 34.4, 
-    status: { label: "Vela/Motor", emoji: "⛵", color: "bg-blue-400/10 text-blue-600 border-blue-200" },
-    isActive: true 
-  },
 ];
 
 export default function Receitas() {
   const [recipesList, setRecipesList] = useState(INITIAL_RECIPES);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Gerenciador de Modal Único: 'none' | 'ai' | 'form'
+  // Gerenciador de Modais
   const [activeModal, setActiveModal] = useState<"none" | "ai" | "form">("none");
   const [editingRecipe, setEditingRecipe] = useState<any>(null);
+  
+  // 1. Estado de 'Espera' para dados da IA
+  const [aiDraftData, setAiDraftData] = useState<any>(null);
 
   const filteredRecipes = useMemo(() => {
     return recipesList.filter(r => 
       r.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [recipesList, searchTerm]);
-
-  const stats = useMemo(() => {
-    return {
-      tesouros: recipesList.filter(r => r.status.label === "Tesouro").length,
-      velas: recipesList.filter(r => r.status.label === "Vela/Motor").length,
-      perolas: recipesList.filter(r => r.status.label === "Pérola Escondida").length,
-      ancoras: recipesList.filter(r => r.status.label === "Âncora").length,
-    };
-  }, [recipesList]);
 
   const handleSaveRecipe = (data: any) => {
     const exists = recipesList.find(r => r.id === data.id);
@@ -86,29 +62,22 @@ export default function Receitas() {
       setRecipesList(prev => [data, ...prev]);
       toast.success("Nova ficha técnica salva!");
     }
-    setEditingRecipe(null);
-    setActiveModal("none");
+    handleCloseForm();
   };
 
+  // 2. O Hand-off Seguro
   const handleAiProcessComplete = (data: any) => {
-    // Injeta os dados e troca o modal em um único ciclo
-    setEditingRecipe({ ...data, id: `ai-${Date.now()}` });
+    // Primeiro armazena os dados no Pai
+    setAiDraftData(data);
+    // Depois abre o formulário
     setActiveModal("form");
     toast.success("Receita extraída! Revise os processos.");
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
-      setRecipesList(prev => prev.filter(r => r.id !== id));
-      toast.error("Ficha técnica removida.");
-    }
-  };
-
-  const toggleActive = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setRecipesList(prev => prev.map(r => 
-      r.id === id ? { ...r, isActive: !r.isActive } : r
-    ));
+  const handleCloseForm = () => {
+    setActiveModal("none");
+    setEditingRecipe(null);
+    setAiDraftData(null); // 4. Limpeza de Estado (Cleanup)
   };
 
   const openEdit = (recipe: any) => {
@@ -132,75 +101,12 @@ export default function Receitas() {
             <span className="mr-2">🪄</span> Importar Ficha Técnica com IA
           </Button>
           <Button 
-            onClick={() => { setEditingRecipe(null); setActiveModal("form"); }} 
+            onClick={() => { setEditingRecipe(null); setAiDraftData(null); setActiveModal("form"); }} 
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-6 transition-all shadow-lg"
           >
             <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
           </Button>
         </div>
-      </div>
-
-      {/* Painel de Diagnóstico */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-none shadow-sm bg-card/50">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">👑</span>
-              <Badge variant="outline" className="bg-primary text-primary-foreground border-none">{stats.tesouros}</Badge>
-            </div>
-            <CardTitle className="text-sm font-bold uppercase tracking-wider mt-2 text-primary">Tesouro</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              <span className="font-bold text-foreground">Alta Venda | Alto Lucro.</span> O grande prêmio do restaurante. Foque em vender mais.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-card/50">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">⛵</span>
-              <Badge variant="outline" className="bg-blue-500 text-white border-none">{stats.velas}</Badge>
-            </div>
-            <CardTitle className="text-sm font-bold uppercase tracking-wider mt-2">Vela/Motor</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              <span className="font-bold text-foreground">Alta Venda | Baixo Lucro.</span> Dá tração e traz clientes. Otimize os custos.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-card/50">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">🦪</span>
-              <Badge variant="outline" className="bg-emerald-600 text-white border-none">{stats.perolas}</Badge>
-            </div>
-            <CardTitle className="text-sm font-bold uppercase tracking-wider mt-2">Pérola Escondida</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              <span className="font-bold text-foreground">Baixa Venda | Alto Lucro.</span> Vale muito quando sai. Aumente a divulgação.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-card/50">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">⚓</span>
-              <Badge variant="outline" className="bg-slate-600 text-white border-none">{stats.ancoras}</Badge>
-            </div>
-            <CardTitle className="text-sm font-bold uppercase tracking-wider mt-2">Âncora</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              <span className="font-bold text-foreground">Baixa Venda | Baixo Lucro.</span> Peso morto que afunda o lucro. Remova ou reformule.
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Tabela de Cardápio */}
@@ -223,92 +129,44 @@ export default function Receitas() {
               <TableRow className="hover:bg-transparent border-b border-border/40">
                 <TableHead className="text-[10px] font-bold uppercase py-4 pl-6">Prato</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase text-center">Status</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase text-center">Ativo</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase text-right">Preço (R$)</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase text-right">CMV (%)</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase text-right pr-6">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRecipes.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-sm">
-                    Nenhuma ficha técnica encontrada. Comece criando uma nova.
+              {filteredRecipes.map((recipe) => (
+                <TableRow 
+                  key={recipe.id} 
+                  className="hover:bg-muted/30 transition-colors border-b border-border/20 cursor-pointer group"
+                  onClick={() => openEdit(recipe)}
+                >
+                  <TableCell className="py-4 pl-6">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-border/50">
+                        <AvatarImage src={recipe.photoUrl} />
+                        <AvatarFallback className="bg-muted"><ChefHat className="h-5 w-5 text-muted-foreground" /></AvatarFallback>
+                      </Avatar>
+                      <span className="font-bold text-sm group-hover:text-primary transition-colors">{recipe.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="text-xl" title={recipe.status.label}>{recipe.status.emoji}</span>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm font-bold">
+                    {formatCurrency(parseFloat(recipe.appliedPrice || "0") / 100)}
+                  </TableCell>
+                  <TableCell className="text-right pr-6">
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : (
-                filteredRecipes.map((recipe) => (
-                  <TableRow 
-                    key={recipe.id} 
-                    className={cn(
-                      "hover:bg-muted/30 transition-colors border-b border-border/20 cursor-pointer group",
-                      !recipe.isActive && "opacity-60"
-                    )}
-                    onClick={() => openEdit(recipe)}
-                  >
-                    <TableCell className="py-4 pl-6">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border border-border/50">
-                          <AvatarImage src={recipe.photoUrl} />
-                          <AvatarFallback className="bg-muted"><ChefHat className="h-5 w-5 text-muted-foreground" /></AvatarFallback>
-                        </Avatar>
-                        <span className="font-bold text-sm group-hover:text-primary transition-colors">{recipe.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-xl" title={recipe.status.label}>{recipe.status.emoji}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Switch 
-                          checked={recipe.isActive} 
-                          onCheckedChange={() => toggleActive(recipe.id, { stopPropagation: () => {} } as any)} 
-                        />
-                        <span className="text-[10px] font-bold uppercase text-muted-foreground">{recipe.isActive ? "Sim" : "Não"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm font-bold">
-                      {formatCurrency(parseFloat(recipe.appliedPrice || "0") / 100)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className={cn(
-                        "text-xs font-bold px-2 py-1 rounded",
-                        recipe.cmv > 35 ? "text-red-600 bg-red-50" : "text-emerald-600 bg-emerald-50"
-                      )}>
-                        {recipe.cmv.toFixed(1)}%
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem onClick={() => toast.info("Impressão de custo em desenvolvimento.")}>
-                              <Printer className="mr-2 h-4 w-4" /> Imprimir Custo
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEdit(recipe)}>
-                              <Edit className="mr-2 h-4 w-4" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(recipe.id)} className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {/* Modais Coordenados */}
       <AIImportModal 
         open={activeModal === "ai"}
         onOpenChange={(open) => setActiveModal(open ? "ai" : "none")}
@@ -316,11 +174,12 @@ export default function Receitas() {
       />
 
       <RecipeFormModal 
-        key={editingRecipe?.id || 'new-recipe'}
+        key={editingRecipe?.id || aiDraftData?.id || 'new-recipe'}
         open={activeModal === "form"} 
-        onOpenChange={(open) => setActiveModal(open ? "form" : "none")}
+        onOpenChange={(open) => !open && handleCloseForm()}
         onSave={handleSaveRecipe}
         initialData={editingRecipe}
+        aiDraftData={aiDraftData} // Passando os dados da IA como prop
       />
     </div>
   );
