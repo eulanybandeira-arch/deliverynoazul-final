@@ -6,9 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, FileSpreadsheet, CheckCircle2, Filter } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ShoppingCart, FileSpreadsheet, CheckCircle2, Filter, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSuppliers } from "@/hooks/useSuppliers";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const MOCK_ITEMS = [
   { id: "1", name: "Picanha Argentina", category: "Carnes", supplier: "Frigorífico Boi de Ouro", unit: "kg", currentStock: 12.5, cmd: 4.2, includeLeadTime: true, finalOrder: 0 },
@@ -28,15 +32,16 @@ export default function ListaCompras() {
   // Estados dos Filtros
   const [filterType, setFilterType] = useState<"category" | "supplier">("category");
   const [filterValue, setFilterValue] = useState("all");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const calculateSuggested = (item: any) => {
-    const effectiveLeadTime = item.includeLeadTime ? globalLeadTime : 0;
+    const effectiveLeadTime = filterType === 'supplier' ? globalLeadTime : 0;
     const needed = item.cmd * (globalDaysToKeep + effectiveLeadTime);
     const suggestion = needed - item.currentStock;
     return suggestion > 0 ? Math.ceil(suggestion * 10) / 10 : 0;
   };
 
-  // Opções dinâmicas para o dropdown
   const filterOptions = useMemo(() => {
     if (filterType === "category") {
       return CATEGORIES.map(c => ({ id: c, name: c }));
@@ -44,7 +49,6 @@ export default function ListaCompras() {
     return suppliers.map(s => ({ id: s.name, name: s.name }));
   }, [filterType, suppliers]);
 
-  // Filtragem da lista
   const filteredItems = useMemo(() => {
     if (filterValue === "all") return items;
     return items.filter(item => {
@@ -55,7 +59,7 @@ export default function ListaCompras() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* CABEÇALHO (PRESERVADO) */}
+      {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Lista de Compras Inteligente</h1>
@@ -71,9 +75,9 @@ export default function ListaCompras() {
         </div>
       </div>
 
-      {/* NOVA BARRA DE FILTROS (PÍLULA + DROPDOWN) */}
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-card/40 backdrop-blur-sm p-3 rounded-2xl border border-border/40 w-full sm:w-fit">
-        <div className="flex bg-muted/50 rounded-full p-1 border border-border/20">
+      {/* BARRA DE FILTROS COM PERÍODO */}
+      <div className="flex flex-col lg:flex-row items-center gap-4 bg-card/40 backdrop-blur-sm p-3 rounded-2xl border border-border/40 w-full lg:w-fit">
+        <div className="flex bg-muted/50 rounded-full p-1 border border-border/20 shrink-0">
           <button 
             onClick={() => { setFilterType('category'); setFilterValue('all'); }}
             className={cn(
@@ -97,7 +101,7 @@ export default function ListaCompras() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
           <Select value={filterValue} onValueChange={setFilterValue}>
-            <SelectTrigger className="w-full sm:w-[240px] bg-background/50 border-none h-9 text-xs font-bold text-primary focus:ring-1 focus:ring-primary/20">
+            <SelectTrigger className="w-full sm:w-[200px] bg-background/50 border-none h-9 text-xs font-bold text-primary focus:ring-1 focus:ring-primary/20">
               <SelectValue placeholder={filterType === 'category' ? "Todas as Categorias" : "Todos os Fornecedores"} />
             </SelectTrigger>
             <SelectContent>
@@ -112,13 +116,45 @@ export default function ListaCompras() {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto border-l border-border/40 pl-0 lg:pl-4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("h-9 text-xs font-medium justify-start text-left bg-background/50 border-none w-full sm:w-[140px]", !startDate && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {startDate ? format(startDate, "dd/MM/yy") : "Data Inicial"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus locale={ptBR} />
+            </PopoverContent>
+          </Popover>
+          <span className="text-muted-foreground text-xs">-</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("h-9 text-xs font-medium justify-start text-left bg-background/50 border-none w-full sm:w-[140px]", !endDate && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {endDate ? format(endDate, "dd/MM/yy") : "Data Final"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus locale={ptBR} />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      {/* CARDS DE PARÂMETROS (PRESERVADOS) */}
+      {/* CARDS DE PARÂMETROS COM RENDERIZAÇÃO CONDICIONAL E MICROCOPY */}
       <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-12">
+        <CardContent className={cn(
+          "p-6 md:p-8 grid gap-12",
+          filterType === 'supplier' ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
+        )}>
           <div className="space-y-3">
-            <Label className="text-xs font-bold text-primary uppercase">Dias de Cobertura Desejada</Label>
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-primary uppercase">Dias de Cobertura Desejada</Label>
+              <p className="text-[10px] text-muted-foreground font-medium">Qtd. de dias que o estoque deve durar até a próxima compra.</p>
+            </div>
             <Input 
               type="number" 
               className="h-12 text-2xl text-center font-bold text-primary border-primary/30 bg-background/50" 
@@ -126,19 +162,25 @@ export default function ListaCompras() {
               onChange={(e) => setGlobalDaysToKeep(Number(e.target.value))} 
             />
           </div>
-          <div className="space-y-3">
-            <Label className="text-xs font-bold text-primary uppercase">Prazo Médio de Entrega</Label>
-            <Input 
-              type="number" 
-              className="h-12 text-2xl text-center font-bold text-primary border-primary/30 bg-background/50" 
-              value={globalLeadTime} 
-              onChange={(e) => setGlobalLeadTime(Number(e.target.value))} 
-            />
-          </div>
+
+          {filterType === 'supplier' && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-primary uppercase">Prazo Médio de Entrega</Label>
+                <p className="text-[10px] text-muted-foreground font-medium">Qtd. de dias entre o pedido e o recebimento do fornecedor.</p>
+              </div>
+              <Input 
+                type="number" 
+                className="h-12 text-2xl text-center font-bold text-primary border-primary/30 bg-background/50" 
+                value={globalLeadTime} 
+                onChange={(e) => setGlobalLeadTime(Number(e.target.value))} 
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* TABELA (PRESERVADA) */}
+      {/* TABELA */}
       <div className="rounded-xl border border-border/50 shadow-sm overflow-hidden bg-card">
         <Table>
           <TableHeader className="bg-muted/30">
