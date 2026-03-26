@@ -8,14 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Edit, Trash2, Search, MoreVertical, Printer, ChefHat, Wand2 } from "lucide-react";
+import { Plus, Edit, Trash2, Search, MoreVertical, Printer, ChefHat } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { cn } from "@/lib/utils";
 import { RecipeFormModal } from "@/components/recipes/RecipeFormModal";
 import { AIImportModal } from "@/components/recipes/AIImportModal";
 import { toast } from "sonner";
 
-// Dados iniciais para teste
 const INITIAL_RECIPES = [
   { 
     id: "1", 
@@ -56,11 +55,11 @@ const INITIAL_RECIPES = [
 ];
 
 export default function Receitas() {
-  const navigate = useNavigate();
   const [recipesList, setRecipesList] = useState(INITIAL_RECIPES);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  
+  // Gerenciador de Modal Único: 'none' | 'ai' | 'form'
+  const [activeModal, setActiveModal] = useState<"none" | "ai" | "form">("none");
   const [editingRecipe, setEditingRecipe] = useState<any>(null);
 
   const filteredRecipes = useMemo(() => {
@@ -88,19 +87,14 @@ export default function Receitas() {
       toast.success("Nova ficha técnica salva!");
     }
     setEditingRecipe(null);
+    setActiveModal("none");
   };
 
   const handleAiProcessComplete = (data: any) => {
-    // 1. Fechamos o modal de IA primeiro
-    setIsAiModalOpen(false);
-    
-    // 2. Definimos os dados e abrimos o formulário com um pequeno delay
-    // O delay é crucial para o Radix UI processar o fechamento do modal anterior
-    setTimeout(() => {
-      setEditingRecipe({ ...data, id: `ai-${Date.now()}` }); // Garante um ID temporário único
-      setIsModalOpen(true);
-      toast.success("Receita extraída! Revise os processos.");
-    }, 300);
+    // Injeta os dados e troca o modal em um único ciclo
+    setEditingRecipe({ ...data, id: `ai-${Date.now()}` });
+    setActiveModal("form");
+    toast.success("Receita extraída! Revise os processos.");
   };
 
   const handleDelete = (id: string) => {
@@ -119,7 +113,7 @@ export default function Receitas() {
 
   const openEdit = (recipe: any) => {
     setEditingRecipe(recipe);
-    setIsModalOpen(true);
+    setActiveModal("form");
   };
 
   return (
@@ -132,13 +126,13 @@ export default function Receitas() {
         <div className="flex items-center gap-3">
           <Button 
             variant="outline"
-            onClick={() => setIsAiModalOpen(true)}
+            onClick={() => setActiveModal("ai")}
             className="border-primary/20 text-primary hover:bg-primary/5 font-bold h-11 px-6 transition-all"
           >
             <span className="mr-2">🪄</span> Importar Ficha Técnica com IA
           </Button>
           <Button 
-            onClick={() => { setEditingRecipe(null); setIsModalOpen(true); }} 
+            onClick={() => { setEditingRecipe(null); setActiveModal("form"); }} 
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-6 transition-all shadow-lg"
           >
             <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
@@ -314,19 +308,19 @@ export default function Receitas() {
         </CardContent>
       </Card>
 
-      {/* O uso da 'key' força o React a recriar o componente do zero sempre que o editingRecipe mudar */}
-      <RecipeFormModal 
-        key={editingRecipe?.id || 'new-recipe'}
-        open={isModalOpen} 
-        onOpenChange={setIsModalOpen}
-        onSave={handleSaveRecipe}
-        initialData={editingRecipe}
+      {/* Modais Coordenados */}
+      <AIImportModal 
+        open={activeModal === "ai"}
+        onOpenChange={(open) => setActiveModal(open ? "ai" : "none")}
+        onProcessComplete={handleAiProcessComplete}
       />
 
-      <AIImportModal 
-        open={isAiModalOpen}
-        onOpenChange={setIsAiModalOpen}
-        onProcessComplete={handleAiProcessComplete}
+      <RecipeFormModal 
+        key={editingRecipe?.id || 'new-recipe'}
+        open={activeModal === "form"} 
+        onOpenChange={(open) => setActiveModal(open ? "form" : "none")}
+        onSave={handleSaveRecipe}
+        initialData={editingRecipe}
       />
     </div>
   );

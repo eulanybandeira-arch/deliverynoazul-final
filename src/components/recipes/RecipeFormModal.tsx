@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Lightbulb, Printer, Check, Link as LinkIcon } from "lucide-react";
+import { Camera, Search, Trash2, Plus, CheckCircle2, Info, Package, TrendingUp, AlertTriangle, Printer, Check, Link as LinkIcon } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,7 @@ interface RecipeFormModalProps {
 }
 
 export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: RecipeFormModalProps) {
-  // Inicialização de estado baseada no initialData para evitar 'flicker' ou tela em branco
+  // Estados locais inicializados com initialData
   const [name, setName] = useState(initialData?.name || "");
   const [yieldAmount, setYieldAmount] = useState(String(initialData?.yieldAmount || "1"));
   const [yieldUnit, setYieldUnit] = useState(initialData?.yieldUnit || "Porção");
