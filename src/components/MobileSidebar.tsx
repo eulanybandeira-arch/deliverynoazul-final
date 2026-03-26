@@ -13,7 +13,8 @@ import {
   MessageSquare,
   Settings,
   Lock,
-  Store
+  Store,
+  PlusCircle
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -89,6 +90,7 @@ export function MobileSidebar() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-3 mb-1">
                 Estoque e Compras
               </p>
+              {renderItem({ title: "Entrada de Compras", url: "/entrada-compras", icon: PlusCircle })}
               {renderItem({ title: "Cadastro de Insumos", url: "/compras", icon: ShoppingCart })}
               {renderItem({ title: "Fornecedores", url: "/fornecedores", icon: Truck })}
               {renderItem({ title: "Inventário & Auditoria", url: "/inventario", icon: ClipboardCheck })}

@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import InventoryBalance from "./pages/InventoryBalance";
 import PurchaseReport from "./pages/PurchaseReport";
 import FluxoCaixa from "./pages/FluxoCaixa";
+import EntradaCompras from "./pages/EntradaCompras";
 import Configuracoes from "./pages/Configuracoes";
 import Legal from "./pages/Legal";
 import Faq from "./pages/Faq";
@@ -61,6 +62,7 @@ const App = () => (
             <Route element={<ProtectedLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/compras" element={<Compras />} />
+              <Route path="/entrada-compras" element={<EntradaCompras />} />
               <Route path="/inventario" element={<Inventario />} />
               <Route path="/lista-compras" element={<ListaCompras />} />
               <Route path="/fornecedores" element={<Fornecedores />} />
