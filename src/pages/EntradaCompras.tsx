@@ -15,11 +15,10 @@ import {
   History,
   Zap,
   ArrowRight
-} from "lucide-center";
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/pricing";
 import { ManualEntryModal } from "@/components/purchases/ManualEntryModal";
-import { AiExtractionModal } from "@/components/purchases/AiExtractionModal";
 import { toast } from "sonner";
 
 const MOCK_HISTORY = [
@@ -35,9 +34,7 @@ const MOCK_REVIEW_ITEMS = [
 ];
 
 export default function EntradaCompras() {
-  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileClick = () => {
@@ -47,18 +44,11 @@ export default function EntradaCompras() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      setIsAiModalOpen(true);
-      // Limpa o input para permitir selecionar o mesmo arquivo novamente se necessário
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      toast.success(`Arquivo "${file.name}" selecionado!`, {
+        description: "Iniciando leitura inteligente dos dados...",
+      });
+      // Aqui entraria a lógica de upload/processamento real
     }
-  };
-
-  const handleAiConfirm = (items: any[]) => {
-    toast.success(`${items.length} itens importados com sucesso!`, {
-      description: "O estoque e o CMV foram atualizados com os novos valores.",
-    });
-    // Aqui você integraria com seu hook de inventário para salvar os dados reais
   };
 
   return (
@@ -76,7 +66,7 @@ export default function EntradaCompras() {
               <Zap className="h-5 w-5 text-primary" />
               <CardTitle className="text-lg font-bold text-primary uppercase tracking-wider">Registrar Nova Compra</CardTitle>
             </div>
-            <Button onClick={() => setIsManualModalOpen(true)} variant="outline" className="border-primary text-primary hover:bg-primary/5 font-bold">
+            <Button onClick={() => setIsModalOpen(true)} variant="outline" className="border-primary text-primary hover:bg-primary/5 font-bold">
               <Plus className="h-4 w-4 mr-2" /> Adicionar Manualmente
             </Button>
           </div>
@@ -227,13 +217,7 @@ export default function EntradaCompras() {
         </Card>
       </div>
 
-      <ManualEntryModal open={isManualModalOpen} onOpenChange={setIsManualModalOpen} />
-      <AiExtractionModal 
-        open={isAiModalOpen} 
-        onOpenChange={setIsAiModalOpen} 
-        file={selectedFile} 
-        onConfirm={handleAiConfirm}
-      />
+      <ManualEntryModal open={isModalOpen} onOpenChange={setIsModalOpen} />
     </div>
   );
 }
