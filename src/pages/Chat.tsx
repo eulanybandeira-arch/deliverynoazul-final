@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -58,7 +57,6 @@ export default function Chat() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // Estados de Sessão e Histórico
   const [chats, setChats] = useState<ChatSession[]>([
     { id: "1", title: "Análise de CMV Hambúrguer", messages: [], date: new Date().toISOString() },
     { id: "2", title: "Dúvida sobre Taxas iFood", messages: [], date: new Date(Date.now() - 86400000).toISOString() },
@@ -81,7 +79,6 @@ export default function Chat() {
 
   const messages = activeChat?.messages || [];
 
-  // Fetch user context and recipes on mount
   useEffect(() => {
     if (user) {
       fetchUserContext();
@@ -303,7 +300,6 @@ export default function Chat() {
       attachments: messageAttachments,
     };
     
-    // Atualiza mensagens do chat ativo
     setChats(prev => prev.map(c => 
       c.id === activeChatId 
         ? { ...c, messages: [...c.messages, userMsg], title: c.messages.length === 0 ? userMessage.substring(0, 30) + "..." : c.title } 
@@ -341,7 +337,6 @@ export default function Chat() {
       const decoder = new TextDecoder();
       let textBuffer = "";
 
-      // Adiciona placeholder para a resposta da assistente
       setChats(prev => prev.map(c => 
         c.id === activeChatId 
           ? { ...c, messages: [...c.messages, { role: "assistant", content: "" }] } 
@@ -434,26 +429,18 @@ export default function Chat() {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col space-y-4">
-      <div className="flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-3xl font-bold text-primary dark:text-foreground">Lucra</h1>
-          <p className="text-muted-foreground">Consultor de Inteligência do Sistema Delivery no Azul</p>
-        </div>
-      </div>
-
-      <Card className="flex-1 flex overflow-hidden border-border/40 shadow-2xl">
+    <div className="h-[calc(100vh-100px)] flex flex-col -m-4 md:-m-8">
+      <div className="flex-1 flex overflow-hidden">
         {/* COLUNA ESQUERDA: HISTÓRICO */}
-        <div className="w-[280px] border-r bg-muted/30 flex flex-col shrink-0">
-          <div className="p-4 border-b bg-background/50">
-            <Button onClick={handleNewChat} className="w-full gap-2 shadow-md" size="lg">
+        <div className="w-[280px] border-r bg-muted/10 flex flex-col shrink-0">
+          <div className="p-4 border-b">
+            <Button onClick={handleNewChat} className="w-full gap-2 shadow-sm" variant="outline">
               <Plus className="h-4 w-4" /> Nova Conversa
             </Button>
           </div>
           
           <ScrollArea className="flex-1">
             <div className="p-3 space-y-6">
-              {/* Grupo: Hoje */}
               <div className="space-y-1">
                 <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-2">Hoje</p>
                 {chats.map(chat => (
@@ -464,7 +451,7 @@ export default function Chat() {
                       "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200",
                       activeChatId === chat.id 
                         ? "bg-primary/10 text-primary font-semibold" 
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                        : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
                     )}
                   >
                     <MessageSquare className={cn("h-4 w-4 shrink-0", activeChatId === chat.id ? "text-primary" : "text-muted-foreground/50")} />
@@ -481,7 +468,7 @@ export default function Chat() {
             </div>
           </ScrollArea>
           
-          <div className="p-4 border-t bg-background/50">
+          <div className="p-4 border-t">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
               <Clock className="h-3 w-3" /> Histórico de 30 dias
             </div>
@@ -490,16 +477,21 @@ export default function Chat() {
 
         {/* COLUNA DIREITA: CHAT ATIVO */}
         <div className="flex-1 flex flex-col bg-background relative">
-          {/* Header do Chat */}
-          <div className="p-4 border-b flex items-center justify-between bg-background/50 backdrop-blur-sm z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Bot className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold leading-none">{activeChat?.title}</h3>
-                <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">Sessão de Inteligência Ativa</p>
-              </div>
+          {/* Header do Chat com Atalhos e Dropdown */}
+          <div className="p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 bg-background/50 backdrop-blur-sm z-10">
+            <div className="flex flex-wrap items-center gap-2">
+              {QUICK_SUGGESTIONS.map((suggestion, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[11px] font-bold uppercase tracking-wider gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                  onClick={() => handleQuickSuggestion(suggestion.message)}
+                >
+                  <suggestion.icon className="h-3.5 w-3.5" />
+                  {suggestion.label}
+                </Button>
+              ))}
             </div>
             
             <div className="flex items-center gap-2">
@@ -515,7 +507,7 @@ export default function Chat() {
                     }
                   }}
                 >
-                  <SelectTrigger className="w-[200px] h-8 text-xs gap-2 border-dashed">
+                  <SelectTrigger className="w-[220px] h-8 text-xs gap-2 border-dashed bg-muted/30">
                     <ChefHat className="h-3.5 w-3.5" />
                     <SelectValue placeholder="Analisar uma receita..." />
                   </SelectTrigger>
@@ -530,39 +522,24 @@ export default function Chat() {
           </div>
 
           {/* Área de Mensagens */}
-          <ScrollArea className="flex-1 p-4 md:p-6" ref={scrollRef}>
+          <ScrollArea className="flex-1 p-4 md:p-8" ref={scrollRef}>
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-8 max-w-2xl mx-auto pt-12">
                 <div className="space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto animate-in zoom-in duration-500">
-                    <Bot className="h-8 w-8 text-primary" />
+                  <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto animate-in zoom-in duration-500">
+                    <Bot className="h-10 w-10 text-primary" />
                   </div>
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-bold tracking-tight">Olá! Sou a Lucra.</h2>
-                    <p className="text-muted-foreground">
+                    <h2 className="text-3xl font-bold tracking-tight">Olá! Sou a Lucra.</h2>
+                    <p className="text-muted-foreground text-lg">
                       Sua mentora financeira treinada na metodologia <span className="text-primary font-bold">A Regra da Casa</span>. 
                       Como posso ajudar seu delivery a lucrar mais hoje?
                     </p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
-                  {QUICK_SUGGESTIONS.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleQuickSuggestion(suggestion.message)}
-                      className="flex flex-col items-center gap-3 p-4 rounded-xl border bg-card hover:border-primary hover:bg-primary/5 transition-all duration-300 group text-center"
-                    >
-                      <div className="p-2 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors">
-                        <suggestion.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
-                      </div>
-                      <span className="text-xs font-bold uppercase tracking-wider">{suggestion.label}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
             ) : (
-              <div className="space-y-6 max-w-4xl mx-auto">
+              <div className="space-y-8 max-w-4xl mx-auto">
                 {messages.map((msg, index) => (
                   <div
                     key={index}
@@ -572,28 +549,28 @@ export default function Chat() {
                     )}
                   >
                     <div className={cn(
-                      "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
+                      "flex-shrink-0 w-9 h-9 rounded-2xl flex items-center justify-center shadow-sm",
                       msg.role === "user" ? "bg-primary" : "bg-muted border"
                     )}>
-                      {msg.role === "user" ? <User className="h-4 w-4 text-primary-foreground" /> : <Bot className="h-4 w-4 text-primary" />}
+                      {msg.role === "user" ? <User className="h-5 w-5 text-primary-foreground" /> : <Bot className="h-5 w-5 text-primary" />}
                     </div>
                     
                     <div className={cn(
-                      "flex flex-col space-y-2 max-w-[85%]",
+                      "flex flex-col space-y-2 max-w-[80%]",
                       msg.role === "user" ? "items-end" : "items-start"
                     )}>
                       {msg.attachments && msg.attachments.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {msg.attachments.map((att, attIndex) => (
-                            <div key={attIndex} className="flex items-center gap-2 text-[10px] font-bold uppercase bg-muted/50 border rounded-lg px-2 py-1">
-                              {att.type === "image" ? <ImageIcon className="h-3 w-3" /> : <Paperclip className="h-3 w-3" />}
-                              <span className="truncate max-w-[120px]">{att.name}</span>
+                            <div key={attIndex} className="flex items-center gap-2 text-[10px] font-bold uppercase bg-muted/50 border rounded-xl px-3 py-1.5">
+                              {att.type === "image" ? <ImageIcon className="h-3.5 w-3.5" /> : <Paperclip className="h-3.5 w-3.5" />}
+                              <span className="truncate max-w-[150px]">{att.name}</span>
                             </div>
                           ))}
                         </div>
                       )}
                       <div className={cn(
-                        "rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
+                        "rounded-[24px] px-5 py-3.5 text-sm leading-relaxed shadow-sm",
                         msg.role === "user" 
                           ? "bg-primary text-primary-foreground rounded-tr-none" 
                           : "bg-muted/50 border border-border/40 rounded-tl-none"
@@ -605,10 +582,10 @@ export default function Chat() {
                 ))}
                 {isLoading && messages[messages.length - 1]?.role === "user" && (
                   <div className="flex gap-4 animate-pulse">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted border flex items-center justify-center">
-                      <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                    <div className="flex-shrink-0 w-9 h-9 rounded-2xl bg-muted border flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     </div>
-                    <div className="bg-muted/30 border border-dashed rounded-2xl px-4 py-3 h-10 w-24" />
+                    <div className="bg-muted/30 border border-dashed rounded-[24px] px-5 py-3.5 h-12 w-32" />
                   </div>
                 )}
               </div>
@@ -616,23 +593,23 @@ export default function Chat() {
           </ScrollArea>
 
           {/* Input de Mensagem */}
-          <div className="p-4 border-t bg-background/80 backdrop-blur-md shrink-0">
+          <div className="p-6 border-t bg-background/80 backdrop-blur-md shrink-0">
             <div className="max-w-4xl mx-auto">
               {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {attachments.map((att, index) => (
-                    <div key={index} className="relative group bg-muted rounded-xl overflow-hidden border shadow-sm">
+                    <div key={index} className="relative group bg-muted rounded-2xl overflow-hidden border shadow-sm">
                       {att.type === "image" && att.preview ? (
-                        <img src={att.preview} alt={att.file.name} className="h-14 w-14 object-cover" />
+                        <img src={att.preview} alt={att.file.name} className="h-16 w-16 object-cover" />
                       ) : (
-                        <div className="h-14 w-14 flex items-center justify-center bg-primary/5">
-                          <Paperclip className="h-5 w-5 text-primary" />
+                        <div className="h-16 w-16 flex items-center justify-center bg-primary/5">
+                          <Paperclip className="h-6 w-6 text-primary" />
                         </div>
                       )}
                       <button
                         type="button"
                         onClick={() => removeAttachment(index)}
-                        className="absolute top-0.5 right-0.5 bg-destructive text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -641,7 +618,7 @@ export default function Chat() {
                 </div>
               )}
               
-              <form onSubmit={handleSubmit} className="relative flex items-end gap-2 bg-muted/50 border border-border/40 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+              <form onSubmit={handleSubmit} className="relative flex items-end gap-2 bg-muted/30 border border-border/40 rounded-[28px] p-2.5 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -654,7 +631,7 @@ export default function Chat() {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 shrink-0 rounded-xl hover:bg-primary/10 hover:text-primary"
+                  className="h-11 w-11 shrink-0 rounded-full hover:bg-primary/10 hover:text-primary"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading}
                 >
@@ -666,7 +643,7 @@ export default function Chat() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Pergunte sobre seu lucro, CMV ou equipe..."
-                  className="flex-1 min-h-[40px] max-h-32 border-none bg-transparent focus-visible:ring-0 resize-none py-2.5 text-sm"
+                  className="flex-1 min-h-[44px] max-h-32 border-none bg-transparent focus-visible:ring-0 resize-none py-3 text-base"
                   rows={1}
                   disabled={isLoading}
                 />
@@ -675,18 +652,18 @@ export default function Chat() {
                   type="submit" 
                   disabled={(!input.trim() && attachments.length === 0) || isLoading} 
                   size="icon" 
-                  className="h-10 w-10 shrink-0 rounded-xl shadow-lg"
+                  className="h-11 w-11 shrink-0 rounded-full shadow-lg bg-primary hover:bg-primary/90"
                 >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 </Button>
               </form>
-              <p className="text-[9px] text-center text-muted-foreground mt-2 uppercase tracking-widest font-bold opacity-50">
-                Lucra AI • Inteligência Financeira para Deliveries
+              <p className="text-[10px] text-center text-muted-foreground mt-3 uppercase tracking-widest font-bold opacity-60">
+                Lucra AI • Inteligência Financeira para Restaurantes e Deliveries
               </p>
             </div>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
