@@ -70,6 +70,16 @@ export function NewCountModal({ open, onOpenChange, onConfirm }: NewCountModalPr
                   initialFocus
                   locale={ptBR}
                   className="w-full"
+                  classNames={{
+                    months: "w-full",
+                    month: "w-full space-y-4",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex w-full",
+                    head_cell: "text-muted-foreground rounded-md flex-1 font-normal text-[0.8rem]",
+                    row: "flex w-full mt-2",
+                    cell: "flex-1 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    day: "h-9 w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground",
+                  }}
                 />
               </PopoverContent>
             </Popover>
