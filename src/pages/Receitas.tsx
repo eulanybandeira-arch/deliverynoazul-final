@@ -91,15 +91,16 @@ export default function Receitas() {
   };
 
   const handleAiProcessComplete = (data: any) => {
-    // 1. Primeiro definimos os dados
-    setEditingRecipe(data);
-    // 2. Fechamos o modal de IA
+    // 1. Fechamos o modal de IA primeiro
     setIsAiModalOpen(false);
-    // 3. Abrimos o formulário principal com um delay seguro para o Radix UI
+    
+    // 2. Definimos os dados e abrimos o formulário com um pequeno delay
+    // O delay é crucial para o Radix UI processar o fechamento do modal anterior
     setTimeout(() => {
+      setEditingRecipe({ ...data, id: `ai-${Date.now()}` }); // Garante um ID temporário único
       setIsModalOpen(true);
       toast.success("Receita extraída! Revise os processos.");
-    }, 200);
+    }, 300);
   };
 
   const handleDelete = (id: string) => {
@@ -313,7 +314,9 @@ export default function Receitas() {
         </CardContent>
       </Card>
 
+      {/* O uso da 'key' força o React a recriar o componente do zero sempre que o editingRecipe mudar */}
       <RecipeFormModal 
+        key={editingRecipe?.id || 'new-recipe'}
         open={isModalOpen} 
         onOpenChange={setIsModalOpen}
         onSave={handleSaveRecipe}

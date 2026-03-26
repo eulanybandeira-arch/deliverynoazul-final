@@ -50,61 +50,27 @@ interface RecipeFormModalProps {
 }
 
 export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: RecipeFormModalProps) {
-  // Identidade
-  const [name, setName] = useState("");
-  const [yieldAmount, setYieldAmount] = useState("1");
-  const [yieldUnit, setYieldUnit] = useState("Porção");
-  const [salesVolume, setSalesVolume] = useState("Alta Venda");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  // Inicialização de estado baseada no initialData para evitar 'flicker' ou tela em branco
+  const [name, setName] = useState(initialData?.name || "");
+  const [yieldAmount, setYieldAmount] = useState(String(initialData?.yieldAmount || "1"));
+  const [yieldUnit, setYieldUnit] = useState(initialData?.yieldUnit || "Porção");
+  const [salesVolume, setSalesVolume] = useState(initialData?.salesVolume || "Alta Venda");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initialData?.photoUrl || null);
+  const [ingredients, setIngredients] = useState<RecipeItem[]>(initialData?.ingredients || []);
+  const [packaging, setPackaging] = useState<RecipeItem[]>(initialData?.packaging || []);
+  const [instructions, setInstructions] = useState(initialData?.instructions || "");
+  const [targetCmv, setTargetCmv] = useState(String(initialData?.targetCmv || "30"));
+  const [appliedPrice, setAppliedPrice] = useState(String(initialData?.appliedPrice || ""));
+  const [isAiProcessed] = useState(initialData?.isAiProcessed || false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Listas de Itens
-  const [ingredients, setIngredients] = useState<RecipeItem[]>([]);
-  const [packaging, setPackaging] = useState<RecipeItem[]>([]);
-  const [instructions, setInstructions] = useState("");
-  
   // Estados da Barra de Adição Inteligente
   const [searchTerm, setSearchTerm] = useState("");
   const [searchQty, setSearchQty] = useState("1");
   const [searchUnit, setSearchUnit] = useState("un");
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showResults, setShowResults] = useState(false);
-
-  // Precificação
-  const [targetCmv, setTargetCmv] = useState("30");
-  const [appliedPrice, setAppliedPrice] = useState("");
-
-  // Estado de IA
-  const [isAiProcessed, setIsAiProcessed] = useState(false);
-
-  // Carregamento de dados iniciais (IA ou Edição)
-  useEffect(() => {
-    if (open && initialData) {
-      setName(initialData.name || "");
-      setYieldAmount(String(initialData.yieldAmount || "1"));
-      setYieldUnit(initialData.yieldUnit || "Porção");
-      setSalesVolume(initialData.salesVolume || "Alta Venda");
-      setPhotoUrl(initialData.photoUrl || null);
-      setIngredients(initialData.ingredients || []);
-      setPackaging(initialData.packaging || []);
-      setInstructions(initialData.instructions || "");
-      setTargetCmv(String(initialData.targetCmv || "30"));
-      setAppliedPrice(String(initialData.appliedPrice || ""));
-      setIsAiProcessed(initialData.isAiProcessed || false);
-    } else if (open && !initialData) {
-      setName("");
-      setYieldAmount("1");
-      setYieldUnit("Porção");
-      setSalesVolume("Alta Venda");
-      setPhotoUrl(null);
-      setIngredients([]);
-      setPackaging([]);
-      setInstructions("");
-      setTargetCmv("30");
-      setAppliedPrice("");
-      setIsAiProcessed(false);
-    }
-  }, [open, initialData]);
 
   // Cálculos Dinâmicos
   const totalIngredientsCost = useMemo(() => ingredients.reduce((sum, i) => sum + i.cost, 0), [ingredients]);
@@ -512,7 +478,12 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
             <TabsContent value="preparo" className="m-0">
               <div className="space-y-4">
                 <Label className="text-sm font-bold">Passo a passo para a cozinha</Label>
-                <Textarea placeholder="Descreva detalhadamente como preparar este prato..." className="min-h-[350px] text-base leading-relaxed resize-none" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
+                <Textarea 
+                  placeholder="Descreva detalhadamente como preparar este prato..." 
+                  className="min-h-[350px] text-base leading-relaxed resize-none" 
+                  value={instructions} 
+                  onChange={(e) => setInstructions(e.target.value)} 
+                />
               </div>
             </TabsContent>
 
