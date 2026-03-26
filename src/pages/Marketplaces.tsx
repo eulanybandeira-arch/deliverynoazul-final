@@ -7,17 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Store, 
   Settings2, 
   TrendingDown, 
-  AlertCircle, 
-  ChevronRight, 
-  Info,
   Smartphone,
-  MessageSquare,
   UtensilsCrossed,
   Zap,
-  Bike
+  Bike,
+  Percent,
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/pricing";
@@ -26,23 +23,25 @@ interface ChannelFees {
   id: string;
   name: string;
   icon: any;
+  type: 'standard' | 'salao' | 'delivery-proprio';
   baseCommission?: number;
   transactionFee: number;
   campaigns?: number;
   monthlyFee?: number;
-  discounts?: number; // Para Salão
-  motoboyCost?: number; // Para Delivery Próprio
-  deliveryFeeCharged?: number; // Para Delivery Próprio
+  discounts?: number;
+  motoboyCost?: number;
+  deliveryFeeCharged?: number;
 }
 
 const INITIAL_CHANNELS: ChannelFees[] = [
-  { id: "ifood-entrega", name: "iFood (Plano Entrega)", icon: Smartphone, baseCommission: 23, transactionFee: 3.2, campaigns: 5, monthlyFee: 150 },
-  { id: "ifood-basico", name: "iFood (Plano Básico)", icon: Smartphone, baseCommission: 12, transactionFee: 3.2, campaigns: 5, monthlyFee: 110 },
-  { id: "99food", name: "99Food", icon: Smartphone, baseCommission: 25, transactionFee: 3.2, campaigns: 0, monthlyFee: 0 },
-  { id: "aiqfome", name: "Aiqfome", icon: Smartphone, baseCommission: 12, transactionFee: 3.5, campaigns: 0, monthlyFee: 0 },
-  { id: "rappi", name: "Rappi", icon: Smartphone, baseCommission: 15, transactionFee: 3.5, campaigns: 5, monthlyFee: 0 },
-  { id: "salao", name: "Salão / Balcão", icon: UtensilsCrossed, transactionFee: 2, discounts: 0 },
-  { id: "delivery-proprio", name: "Delivery Próprio", icon: Bike, transactionFee: 2, motoboyCost: 10, deliveryFeeCharged: 7, campaigns: 0 },
+  { id: "ifood-entrega", name: "iFood (Plano Entrega)", type: 'standard', icon: Smartphone, baseCommission: 23, transactionFee: 3.2, campaigns: 5, monthlyFee: 150 },
+  { id: "ifood-basico", name: "iFood (Plano Básico)", type: 'standard', icon: Smartphone, baseCommission: 12, transactionFee: 3.2, campaigns: 5, monthlyFee: 110 },
+  { id: "99food-flex", name: "99Food (Plano Flex)", type: 'standard', icon: Smartphone, baseCommission: 8.9, transactionFee: 3.2, campaigns: 0, monthlyFee: 0 },
+  { id: "99food-fixo", name: "99Food (Plano Fixo)", type: 'standard', icon: Smartphone, baseCommission: 0, transactionFee: 3.2, campaigns: 0, monthlyFee: 0 },
+  { id: "rappi", name: "Rappi", type: 'standard', icon: Smartphone, baseCommission: 27, transactionFee: 3.5, campaigns: 5, monthlyFee: 0 },
+  { id: "aiqfome", name: "Aiqfome", type: 'standard', icon: Smartphone, baseCommission: 12, transactionFee: 2.99, campaigns: 0, monthlyFee: 0 },
+  { id: "salao", name: "Salão / Balcão", type: 'salao', icon: UtensilsCrossed, transactionFee: 2, discounts: 0 },
+  { id: "delivery-proprio", name: "Delivery Próprio", type: 'delivery-proprio', icon: Bike, transactionFee: 1, motoboyCost: 10, deliveryFeeCharged: 7 },
 ];
 
 const MOCK_RECIPES = [
@@ -66,21 +65,26 @@ export default function Marketplaces() {
 
   const analysisData = useMemo(() => {
     return MOCK_RECIPES.map(recipe => {
-      let totalFeePercent = 0;
-      let fixedErosion = 0;
+      let erosionValue = 0;
+      let feeLabel = "";
 
-      if (selectedChannel.id === 'delivery-proprio') {
-        totalFeePercent = selectedChannel.transactionFee + (selectedChannel.campaigns || 0);
-        // Subsídio logístico: Custo Motoboy - Taxa Cobrada
-        const freightSubsidy = Math.max(0, (selectedChannel.motoboyCost || 0) - (selectedChannel.deliveryFeeCharged || 0));
-        fixedErosion = freightSubsidy;
-      } else if (selectedChannel.id === 'salao') {
-        totalFeePercent = selectedChannel.transactionFee + (selectedChannel.discounts || 0);
-      } else {
-        totalFeePercent = (selectedChannel.baseCommission || 0) + selectedChannel.transactionFee + (selectedChannel.campaigns || 0);
+      if (selectedChannel.type === 'salao') {
+        const totalPercent = selectedChannel.transactionFee + (selectedChannel.discounts || 0);
+        erosionValue = recipe.price * (totalPercent / 100);
+        feeLabel = `${totalPercent.toFixed(1)}% (Maquininha + Desc.)`;
+      } 
+      else if (selectedChannel.type === 'delivery-proprio') {
+        const gatewayErosion = recipe.price * (selectedChannel.transactionFee / 100);
+        const logisticsSubsidy = Math.max(0, (selectedChannel.motoboyCost || 0) - (selectedChannel.deliveryFeeCharged || 0));
+        erosionValue = gatewayErosion + logisticsSubsidy;
+        feeLabel = `${selectedChannel.transactionFee}% Gateway + ${formatCurrency(logisticsSubsidy)} Subsídio Frete`;
+      } 
+      else {
+        const totalPercent = (selectedChannel.baseCommission || 0) + selectedChannel.transactionFee + (selectedChannel.campaigns || 0);
+        erosionValue = recipe.price * (totalPercent / 100);
+        feeLabel = `${totalPercent.toFixed(1)}% em taxas`;
       }
 
-      const erosionValue = (recipe.price * (totalFeePercent / 100)) + fixedErosion;
       const contributionValue = recipe.price - recipe.cost - erosionValue;
       const contributionPercent = (contributionValue / recipe.price) * 100;
 
@@ -94,8 +98,7 @@ export default function Marketplaces() {
         contributionValue,
         contributionPercent,
         bcg,
-        totalFeePercent,
-        fixedErosion
+        feeLabel
       };
     });
   }, [selectedChannel]);
@@ -107,10 +110,10 @@ export default function Marketplaces() {
         <p className="text-muted-foreground">Configure as taxas das plataformas e descubra a erosão real do seu lucro.</p>
       </header>
 
-      {/* SEÇÃO 1: SETUP DE TAXAS */}
+      {/* SEÇÃO 1: SETUP DE TAXAS - GRID REESTRUTURADO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {channels.map((channel) => (
-          <Card key={channel.id} className="border-border/40 bg-white dark:bg-card/40 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
+          <Card key={channel.id} className="border-border/40 bg-white dark:bg-card/40 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col">
             <CardHeader className="pb-4 border-b border-border/20 bg-slate-50/50 dark:bg-muted/20">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner">
@@ -119,10 +122,9 @@ export default function Marketplaces() {
                 <CardTitle className="text-sm font-bold truncate text-foreground">{channel.name}</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="pt-6 space-y-5">
+            <CardContent className="pt-6 space-y-5 flex-1">
               <div className="space-y-4">
-                {/* Campos Dinâmicos por Canal */}
-                {channel.id === 'salao' ? (
+                {channel.type === 'salao' ? (
                   <>
                     <div className="flex items-center justify-between">
                       <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Maquininha</Label>
@@ -137,7 +139,7 @@ export default function Marketplaces() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Descontos/Fidelidade</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Descontos</Label>
                       <div className="flex items-center gap-1.5">
                         <Input 
                           type="number" 
@@ -149,10 +151,10 @@ export default function Marketplaces() {
                       </div>
                     </div>
                   </>
-                ) : channel.id === 'delivery-proprio' ? (
+                ) : channel.type === 'delivery-proprio' ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Gateway/Pagto</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Gateway/Pix</Label>
                       <div className="flex items-center gap-1.5">
                         <Input 
                           type="number" 
@@ -187,18 +189,6 @@ export default function Marketplaces() {
                         />
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campanhas/Cupons</Label>
-                      <div className="flex items-center gap-1.5">
-                        <Input 
-                          type="number" 
-                          value={channel.campaigns} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'campaigns', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                        <span className="text-xs font-bold text-muted-foreground">%</span>
-                      </div>
-                    </div>
                   </>
                 ) : (
                   <>
@@ -215,7 +205,7 @@ export default function Marketplaces() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transação/Maquininha</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transação</Label>
                       <div className="flex items-center gap-1.5">
                         <Input 
                           type="number" 
@@ -227,7 +217,7 @@ export default function Marketplaces() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campanhas/Cupons</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campanhas</Label>
                       <div className="flex items-center gap-1.5">
                         <Input 
                           type="number" 
@@ -239,7 +229,7 @@ export default function Marketplaces() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between pt-3 border-t border-border/20">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mensalidade Fixa</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mensalidade</Label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold text-muted-foreground">R$</span>
                         <Input 
@@ -311,13 +301,7 @@ export default function Marketplaces() {
                       <div className="flex flex-col items-end">
                         <span className="font-bold text-destructive text-sm">-{formatCurrency(item.erosionValue)}</span>
                         <span className="text-[10px] text-destructive/70 font-bold uppercase tracking-tighter">
-                          {selectedChannel.id === 'delivery-proprio' ? (
-                            <>
-                              {item.totalFeePercent.toFixed(1)}% taxas + {formatCurrency(item.fixedErosion)} frete
-                            </>
-                          ) : (
-                            <>{item.totalFeePercent.toFixed(1)}% em taxas</>
-                          )}
+                          {item.feeLabel}
                         </span>
                       </div>
                     </TableCell>
@@ -346,7 +330,7 @@ export default function Marketplaces() {
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
             <span className="font-bold text-primary uppercase tracking-wider">Dica de Engenharia:</span> 
-            {selectedChannel.id === 'delivery-proprio' ? (
+            {selectedChannel.type === 'delivery-proprio' ? (
               " No Delivery Próprio, a erosão oculta está no frete. Se o custo do motoboy é maior que a taxa cobrada, você está subsidiando a entrega com sua margem de lucro."
             ) : (
               " Se um prato virou Âncora neste canal, considere aumentar o preço apenas nesta plataforma ou criar um combo exclusivo para diluir a erosão das taxas."
