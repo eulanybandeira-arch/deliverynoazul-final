@@ -8,12 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { 
   ClipboardCheck, 
   Plus, 
-  Calendar as CalendarIcon, 
   Check, 
   CheckCircle2,
   Eye,
   Printer,
-  Trash2,
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,7 +40,6 @@ export default function Inventario() {
     }
   ]);
 
-  // Inicializa os itens a partir do hook de inventário real
   useEffect(() => {
     if (inventoryItems.length > 0 && items.length === 0) {
       setItems(inventoryItems.map(i => ({
@@ -114,9 +111,7 @@ export default function Inventario() {
     };
 
     setHistory([newHistoryEntry, ...history]);
-    toast.success("Inventário fechado com sucesso!", {
-      description: "Os dados foram salvos no histórico e o estoque foi atualizado."
-    });
+    toast.success("Inventário fechado com sucesso!");
   };
 
   const handlePrint = () => {
@@ -146,17 +141,8 @@ export default function Inventario() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-card/40 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-border/40">
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="font-bold text-sm text-primary">
-              {new Date(inventoryDate).toLocaleDateString('pt-BR')}
-            </span>
-          </div>
           <Button variant="outline" className="gap-2" onClick={() => setIsNewCountModalOpen(true)}>
             <Plus className="h-4 w-4" /> Nova Contagem
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={handlePrint}>
-            <Printer className="h-4 w-4" /> Imprimir Lista
           </Button>
           <Button className="gap-2" onClick={handleFinalize}>
             <CheckCircle2 className="h-4 w-4" /> Fechar Inventário
@@ -164,140 +150,148 @@ export default function Inventario() {
         </div>
       </div>
 
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid w-full max-w-[400px] grid-cols-3 mb-6">
-          <TabsTrigger value="pending">Pendentes ({pendingItems.length})</TabsTrigger>
-          <TabsTrigger value="counted">Contados ({countedItems.length})</TabsTrigger>
-          <TabsTrigger value="history">Histórico</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <Tabs defaultValue="pending" className="w-full">
+          <div className="flex items-center justify-between w-full">
+            <TabsList className="grid w-full max-w-[400px] grid-cols-3">
+              <TabsTrigger value="pending">Pendentes ({pendingItems.length})</TabsTrigger>
+              <TabsTrigger value="counted">Contados ({countedItems.length})</TabsTrigger>
+              <TabsTrigger value="history">Histórico</TabsTrigger>
+            </TabsList>
+            
+            <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
+              <Printer className="h-4 w-4" /> Imprimir Lista
+            </Button>
+          </div>
 
-        <TabsContent value="pending">
-          <div className="rounded-xl border overflow-hidden bg-card">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead>Insumo</TableHead>
-                  <TableHead className="text-center">Quantidade Contada</TableHead>
-                  <TableHead className="text-center">Unidade</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingItems.length === 0 ? (
+          <TabsContent value="pending" className="mt-6">
+            <div className="rounded-xl border overflow-hidden bg-card">
+              <Table>
+                <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableCell colSpan={4} className="h-32 text-center text-muted-foreground italic">
-                      Todos os itens foram contados ou não há insumos cadastrados.
-                    </TableCell>
+                    <TableHead>Insumo</TableHead>
+                    <TableHead className="text-center">Quantidade Contada</TableHead>
+                    <TableHead className="text-center">Unidade</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ) : (
-                  pendingItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-bold">{item.name}</span>
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{item.category}</span>
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {pendingItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-32 text-center text-muted-foreground italic">
+                        Todos os itens foram contados ou não há insumos cadastrados.
                       </TableCell>
-                      <TableCell>
-                        <div className="flex justify-center">
-                          <Input 
-                            type="number" 
-                            className="w-24 text-center font-bold" 
-                            placeholder="0.00"
-                            value={item.realCount ?? ""} 
-                            onChange={(e) => handleUpdateCount(item.id, e.target.value)} 
-                          />
-                        </div>
+                    </TableRow>
+                  ) : (
+                    pendingItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-bold">{item.name}</span>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{item.category}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center">
+                            <Input 
+                              type="number" 
+                              className="w-24 text-center font-bold" 
+                              placeholder="0.00"
+                              value={item.realCount ?? ""} 
+                              onChange={(e) => handleUpdateCount(item.id, e.target.value)} 
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="bg-muted/30">{item.unit}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button size="icon" variant="ghost" onClick={() => handleConfirm(item.id)} className="hover:text-primary">
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="counted" className="mt-6">
+            <div className="rounded-xl border overflow-hidden bg-card">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead>Insumo</TableHead>
+                    <TableHead className="text-center">Qtd. Registrada</TableHead>
+                    <TableHead className="text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {countedItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-32 text-center text-muted-foreground italic">
+                        Nenhum item confirmado ainda.
                       </TableCell>
+                    </TableRow>
+                  ) : (
+                    countedItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-bold">{item.name}</TableCell>
+                        <TableCell className="text-center font-mono font-bold text-primary">{item.realCount} {item.unit}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1.5 text-green-600 text-xs font-bold">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Confirmado
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-6">
+            <div className="rounded-xl border overflow-hidden bg-card">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {history.map((h) => (
+                    <TableRow key={h.id}>
+                      <TableCell className="font-medium">{h.date}</TableCell>
+                      <TableCell>{h.responsible}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className="bg-muted/30">{item.unit}</Badge>
+                        <Badge variant={h.status === "Concluído" ? "default" : "secondary"}>
+                          {h.status}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => handleConfirm(item.id)} className="hover:text-primary">
-                          <Check className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="counted">
-          <div className="rounded-xl border overflow-hidden bg-card">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead>Insumo</TableHead>
-                  <TableHead className="text-center">Qtd. Registrada</TableHead>
-                  <TableHead className="text-right">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {countedItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="h-32 text-center text-muted-foreground italic">
-                      Nenhum item confirmado ainda.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  countedItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-bold">{item.name}</TableCell>
-                      <TableCell className="text-center font-mono font-bold text-primary">{item.realCount} {item.unit}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5 text-green-600 text-xs font-bold">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Confirmado
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => setSelectedClosure(h)} title="Visualizar Detalhes">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={handlePrint} title="Imprimir Relatório">
+                            <Printer className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="history">
-          <div className="rounded-xl border overflow-hidden bg-card">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {history.map((h) => (
-                  <TableRow key={h.id}>
-                    <TableCell className="font-medium">{h.date}</TableCell>
-                    <TableCell>{h.responsible}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={h.status === "Concluído" ? "default" : "secondary"}>
-                        {h.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => setSelectedClosure(h)} title="Visualizar Detalhes">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={handlePrint} title="Imprimir Relatório">
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-      </Tabs>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <NewCountModal 
         open={isNewCountModalOpen} 

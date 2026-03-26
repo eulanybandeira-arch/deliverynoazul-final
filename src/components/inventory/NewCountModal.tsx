@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, Play } from "lucide-react";
+import { Play } from "lucide-react";
 
 interface NewCountModalProps {
   open: boolean;
@@ -30,8 +30,7 @@ export function NewCountModal({ open, onOpenChange, onConfirm }: NewCountModalPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-primary" />
+          <DialogTitle>
             Nova Contagem de Estoque
           </DialogTitle>
           <DialogDescription>
@@ -47,7 +46,7 @@ export function NewCountModal({ open, onOpenChange, onConfirm }: NewCountModalPr
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="font-bold text-primary"
+              className="text-muted-foreground"
             />
           </div>
           <p className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
