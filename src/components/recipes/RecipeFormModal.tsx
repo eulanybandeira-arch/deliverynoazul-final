@@ -25,11 +25,6 @@ const MOCK_INSUMOS = [
   { id: "i8", name: "KETCHUP TRADICIONAL", unit: "kg", unitPrice: 15.98 },
 ];
 
-const MOCK_EMBALAGENS = [
-  { id: "e1", name: "Caixa de Hambúrguer", unit: "un", unitPrice: 1.20 },
-  { id: "e2", name: "Sacola Kraft", unit: "un", unitPrice: 0.80 },
-];
-
 const UNIT_OPTIONS = [
   "kg", "g", "L", "mL", "un", "pacote", "gotas", "colher de sopa", 
   "colher de chá", "1/4 xícara", "1/3 xícara", "1/2 xícara", 
@@ -97,7 +92,6 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
       setAppliedPrice(String(initialData.appliedPrice || ""));
       setIsAiProcessed(initialData.isAiProcessed || false);
     } else if (open && !initialData) {
-      // Reset para nova ficha manual
       setName("");
       setYieldAmount("1");
       setYieldUnit("Porção");
@@ -473,7 +467,46 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
                 <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-800">Os custos aqui somam na precificação, mas não aparecem na impressão da cozinha. Use para caixas, sacolas e lacres.</p>
               </div>
-              {/* ... (lógica de embalagens similar à composição) */}
+              <div className="rounded-xl border overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="text-[10px] font-bold uppercase">Embalagem</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-center w-40">Qtd. Usada</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-right">Custo</TableHead>
+                      <TableHead className="w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {packaging.length === 0 ? (
+                      <TableRow><TableCell colSpan={4} className="h-32 text-center text-muted-foreground text-sm italic">Nenhuma embalagem adicionada.</TableCell></TableRow>
+                    ) : (
+                      packaging.map((pkg) => (
+                        <TableRow key={pkg.id}>
+                          <TableCell className="font-medium">{pkg.name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-2">
+                              <Input 
+                                type="number" 
+                                value={pkg.quantity} 
+                                onChange={(e) => updateItemQty(pkg.id, e.target.value, true)}
+                                className="w-24 h-8 text-center font-bold" 
+                              />
+                              <span className="text-[10px] font-bold uppercase text-muted-foreground w-8">{pkg.unit}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-bold text-[#002B5B]">{formatCurrency(pkg.cost)}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => setPackaging(packaging.filter(p => p.id !== pkg.id))}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </TabsContent>
 
             <TabsContent value="preparo" className="m-0">

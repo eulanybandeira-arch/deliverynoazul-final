@@ -23,7 +23,7 @@ export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImpor
   const startProcessing = () => {
     setModalState("processing");
     
-    // Simulação de processamento
+    // Simulação de processamento com dados estruturados
     setTimeout(() => {
       const simulatedData = {
         name: "Strogonoff de Frango Especial",
@@ -55,20 +55,19 @@ export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImpor
   };
 
   const handleConfirmReview = () => {
+    // Passamos os dados e fechamos este modal
     onProcessComplete(extractedData);
-    // Resetamos o estado interno para a próxima vez que abrir
-    setTimeout(() => {
-      setModalState("upload");
-      setExtractedData(null);
-    }, 300);
+    resetModal();
+  };
+
+  const resetModal = () => {
+    setModalState("upload");
+    setExtractedData(null);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if(modalState !== "processing") { onOpenChange(o); if(!o) { setModalState("upload"); setExtractedData(null); } } }}>
-      <DialogContent className={cn(
-        "p-0 overflow-hidden border-none shadow-2xl transition-all duration-300 sm:max-w-[850px]",
-        modalState === "processing" ? "bg-slate-950 text-white" : "bg-background"
-      )}>
+    <Dialog open={open} onOpenChange={(o) => { if(modalState !== "processing") { onOpenChange(o); if(!o) resetModal(); } }}>
+      <DialogContent className="p-0 overflow-hidden border-none shadow-2xl transition-all duration-300 sm:max-w-[850px] bg-background">
         
         {modalState === "upload" && (
           <div className="p-20 flex flex-col items-center justify-center text-center space-y-6">
@@ -95,7 +94,7 @@ export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImpor
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-bold tracking-tight">Processando...</h2>
-              <p className="text-slate-400 text-sm">Analisando documento com IA...</p>
+              <p className="text-muted-foreground text-sm">Analisando documento com IA...</p>
             </div>
             <p className="text-primary/80 text-xs font-bold uppercase tracking-widest animate-pulse">Extraindo informações da receita...</p>
           </div>
