@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Upload, X, Check } from "lucide-react";
+import { Loader2, Upload, X, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AIImportModalProps {
@@ -23,6 +23,7 @@ export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImpor
   const startProcessing = () => {
     setModalState("processing");
     
+    // Simulação de processamento
     setTimeout(() => {
       const simulatedData = {
         name: "Strogonoff de Frango Especial",
@@ -55,16 +56,15 @@ export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImpor
 
   const handleConfirmReview = () => {
     onProcessComplete(extractedData);
-    resetModal();
-  };
-
-  const resetModal = () => {
-    setModalState("upload");
-    setExtractedData(null);
+    // Resetamos o estado interno para a próxima vez que abrir
+    setTimeout(() => {
+      setModalState("upload");
+      setExtractedData(null);
+    }, 300);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if(modalState !== "processing") { onOpenChange(o); if(!o) resetModal(); } }}>
+    <Dialog open={open} onOpenChange={(o) => { if(modalState !== "processing") { onOpenChange(o); if(!o) { setModalState("upload"); setExtractedData(null); } } }}>
       <DialogContent className={cn(
         "p-0 overflow-hidden border-none shadow-2xl transition-all duration-300",
         modalState === "processing" ? "sm:max-w-[400px] bg-slate-950 text-white" : "sm:max-w-[850px] bg-background"

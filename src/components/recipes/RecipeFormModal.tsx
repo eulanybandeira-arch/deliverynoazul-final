@@ -82,34 +82,33 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
   // Estado de IA
   const [isAiProcessed, setIsAiProcessed] = useState(false);
 
-  // Reset/Load data
+  // Carregamento de dados iniciais (IA ou Edição)
   useEffect(() => {
-    if (open) {
-      if (initialData) {
-        setName(initialData.name || "");
-        setYieldAmount(String(initialData.yieldAmount || "1"));
-        setYieldUnit(initialData.yieldUnit || "Porção");
-        setSalesVolume(initialData.salesVolume || "Alta Venda");
-        setPhotoUrl(initialData.photoUrl || null);
-        setIngredients(initialData.ingredients || []);
-        setPackaging(initialData.packaging || []);
-        setInstructions(initialData.instructions || "");
-        setTargetCmv(String(initialData.targetCmv || "30"));
-        setAppliedPrice(String(initialData.appliedPrice || ""));
-        setIsAiProcessed(initialData.isAiProcessed || false);
-      } else {
-        setName("");
-        setYieldAmount("1");
-        setYieldUnit("Porção");
-        setSalesVolume("Alta Venda");
-        setPhotoUrl(null);
-        setIngredients([]);
-        setPackaging([]);
-        setInstructions("");
-        setTargetCmv("30");
-        setAppliedPrice("");
-        setIsAiProcessed(false);
-      }
+    if (open && initialData) {
+      setName(initialData.name || "");
+      setYieldAmount(String(initialData.yieldAmount || "1"));
+      setYieldUnit(initialData.yieldUnit || "Porção");
+      setSalesVolume(initialData.salesVolume || "Alta Venda");
+      setPhotoUrl(initialData.photoUrl || null);
+      setIngredients(initialData.ingredients || []);
+      setPackaging(initialData.packaging || []);
+      setInstructions(initialData.instructions || "");
+      setTargetCmv(String(initialData.targetCmv || "30"));
+      setAppliedPrice(String(initialData.appliedPrice || ""));
+      setIsAiProcessed(initialData.isAiProcessed || false);
+    } else if (open && !initialData) {
+      // Reset para nova ficha manual
+      setName("");
+      setYieldAmount("1");
+      setYieldUnit("Porção");
+      setSalesVolume("Alta Venda");
+      setPhotoUrl(null);
+      setIngredients([]);
+      setPackaging([]);
+      setInstructions("");
+      setTargetCmv("30");
+      setAppliedPrice("");
+      setIsAiProcessed(false);
     }
   }, [open, initialData]);
 
@@ -250,10 +249,6 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
 
     onSave(recipeData);
     onOpenChange(false);
-  };
-
-  const handlePrint = () => {
-    // ... (lógica de impressão mantida)
   };
 
   return (
@@ -558,7 +553,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
 
         <DialogFooter className="p-6 border-t bg-muted/5 shrink-0">
           <div className="flex justify-between items-center w-full">
-            <Button variant="outline" onClick={handlePrint} className="font-bold border-[#002B5B] text-[#002B5B] hover:bg-[#002B5B]/5">
+            <Button variant="outline" onClick={() => toast.info("Impressão em desenvolvimento")} className="font-bold border-[#002B5B] text-[#002B5B] hover:bg-[#002B5B]/5">
               <Printer className="h-4 w-4 mr-2" /> Imprimir Ficha (Cozinha)
             </Button>
             <div className="flex gap-3">
