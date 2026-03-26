@@ -53,7 +53,6 @@ interface RecipeFormModalProps {
 }
 
 export function RecipeFormModal({ open, onOpenChange, onSave, initialData, mode = "manual" }: RecipeFormModalProps) {
-  // Controle de Etapas
   const [step, setStep] = useState<ModalStep>("form");
   
   // Estados do Formulário
@@ -72,38 +71,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData, mode 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const aiFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Inicialização baseada no modo
-  useEffect(() => {
-    if (open) {
-      if (initialData) {
-        // Modo Edição
-        populateForm(initialData);
-        setStep("form");
-        setIsAiProcessed(false);
-      } else if (mode === "ai") {
-        // Modo Importação IA
-        setStep("upload");
-        resetForm();
-      } else {
-        // Modo Novo Manual
-        setStep("form");
-        resetForm();
-        setIsAiProcessed(false);
-      }
-    }
-  }, [open, initialData, mode]);
-
-  const resetForm = () => {
-    setName("");
-    setYieldAmount("1");
-    setYieldUnit("Porção");
-    setIngredients([]);
-    setPackaging([]);
-    setInstructions("");
-    setAppliedPrice("");
-    setPhotoUrl(null);
-  };
-
+  // Função centralizada para popular estados
   const populateForm = (data: any) => {
     setName(data.name || "");
     setYieldAmount(String(data.yieldAmount || "1"));
@@ -116,6 +84,30 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData, mode 
     setTargetCmv(String(data.targetCmv || "30"));
     setAppliedPrice(String(data.appliedPrice || ""));
   };
+
+  // Sincronização de Dados (Data Binding)
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        populateForm(initialData);
+        setStep("form");
+        setIsAiProcessed(false);
+      } else if (mode === "ai") {
+        setStep("upload");
+        // Reset inicial para garantir que não há lixo de estados anteriores
+        setName("");
+        setIngredients([]);
+        setPackaging([]);
+        setIsAiProcessed(false);
+      } else {
+        setStep("form");
+        setName("");
+        setIngredients([]);
+        setPackaging([]);
+        setIsAiProcessed(false);
+      }
+    }
+  }, [open, initialData, mode]);
 
   // Lógica de Processamento de IA (Simulada)
   const handleAiFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,6 +129,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData, mode 
           appliedPrice: "3200"
         };
         
+        // OBRIGATÓRIO: Popular os estados locais IMEDIATAMENTE após a extração
         populateForm(extracted);
         setIsAiProcessed(true);
         setStep("form");
@@ -280,7 +273,6 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData, mode 
     };
 
     onSave(recipeData);
-    onOpenChange(false);
   };
 
   return (
