@@ -85,45 +85,45 @@ export default function Receitas() {
         </div>
       </div>
 
-      {/* MATRIZ BCG - CARDS ESTRATÉGICOS */}
+      {/* MATRIZ BCG - CARDS ESTRATÉGICOS PADRONIZADOS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-[#002B5B]/20 bg-[#002B5B]/5 shadow-sm">
+        <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="text-3xl">👑</div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#002B5B]">Tesouros</p>
-              <p className="text-2xl font-black text-[#002B5B]">{bcgStats.tesouros}</p>
-              <p className="text-[9px] text-muted-foreground">Alta Venda | Alto Lucro</p>
+              <p className="text-sm font-bold text-primary">Tesouro</p>
+              <p className="text-2xl font-black text-primary">{bcgStats.tesouros}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Os queridinhos. Vendem muito e margem alta.</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-blue-200 bg-blue-50 shadow-sm">
+        <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="text-3xl">⛵</div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Velas/Motores</p>
-              <p className="text-2xl font-black text-blue-600">{bcgStats.velas}</p>
-              <p className="text-[9px] text-muted-foreground">Alta Venda | Baixo Lucro</p>
+              <p className="text-sm font-bold text-primary">Vela</p>
+              <p className="text-2xl font-black text-primary">{bcgStats.velas}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Sustentam o volume. Alta saída, margem apertada.</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-emerald-200 bg-emerald-50 shadow-sm">
+        <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="text-3xl">🦪</div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Pérolas</p>
-              <p className="text-2xl font-black text-emerald-600">{bcgStats.perolas}</p>
-              <p className="text-[9px] text-muted-foreground">Baixa Venda | Alto Lucro</p>
+              <p className="text-sm font-bold text-primary">Pérola Escondida</p>
+              <p className="text-2xl font-black text-primary">{bcgStats.perolas}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Ouro não explorado. Margem alta, saída baixa.</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-200 bg-slate-50 shadow-sm">
+        <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="text-3xl">⚓</div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Âncoras</p>
-              <p className="text-2xl font-black text-slate-600">{bcgStats.ancoras}</p>
-              <p className="text-[9px] text-muted-foreground">Baixa Venda | Baixo Lucro</p>
+              <p className="text-sm font-bold text-primary">Âncora</p>
+              <p className="text-2xl font-black text-primary">{bcgStats.ancoras}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">Pesos mortos. Baixa saída e margem ruim.</p>
             </div>
           </CardContent>
         </Card>
