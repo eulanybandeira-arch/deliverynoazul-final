@@ -33,7 +33,7 @@ import PrepBases from "./pages/PrepBases";
 import PrepBaseDetail from "./pages/PrepBaseDetail";
 import Desperdicios from "./pages/Desperdicios";
 import Marketplaces from "./pages/Marketplaces";
-import { ThemeProvider } from "@/theme-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const queryClient = new QueryClient();
 
