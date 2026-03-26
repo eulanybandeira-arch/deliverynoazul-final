@@ -8,11 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Edit, Trash2, Search, MoreVertical, Printer, ChefHat } from "lucide-react";
+import { Plus, Edit, Trash2, Search, MoreVertical, Printer, ChefHat, Sparkles } from "lucide-react";
 import { formatCurrency } from "@/utils/pricing";
 import { cn } from "@/lib/utils";
 import { RecipeFormModal } from "@/components/recipes/RecipeFormModal";
-import { AIImportModal } from "@/components/recipes/AIImportModal";
 import { toast } from "sonner";
 
 const INITIAL_RECIPES = [
@@ -31,7 +30,7 @@ const INITIAL_RECIPES = [
     unitCost: 8.50, 
     price: 35.00, 
     cmv: 24.2, 
-    status: { label: "Tesouro", emoji: "👑", color: "bg-primary/10 text-primary border-primary/20" },
+    status: { label: "Tesouro", emoji: "👑", color: "text-[#002B5B]" },
     isActive: true 
   },
 ];
@@ -40,12 +39,10 @@ export default function Receitas() {
   const [recipesList, setRecipesList] = useState(INITIAL_RECIPES);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Gerenciador de Modais
-  const [activeModal, setActiveModal] = useState<"none" | "ai" | "form">("none");
+  // Gerenciador de Modal Único
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"manual" | "ai">("manual");
   const [editingRecipe, setEditingRecipe] = useState<any>(null);
-  
-  // 1. Estado de 'Espera' para dados da IA
-  const [aiDraftData, setAiDraftData] = useState<any>(null);
 
   const filteredRecipes = useMemo(() => {
     return recipesList.filter(r => 
@@ -62,27 +59,32 @@ export default function Receitas() {
       setRecipesList(prev => [data, ...prev]);
       toast.success("Nova ficha técnica salva!");
     }
-    handleCloseForm();
+    setIsModalOpen(false);
   };
 
-  // 2. O Hand-off Seguro
-  const handleAiProcessComplete = (data: any) => {
-    // Primeiro armazena os dados no Pai
-    setAiDraftData(data);
-    // Depois abre o formulário
-    setActiveModal("form");
-    toast.success("Receita extraída! Revise os processos.");
-  };
-
-  const handleCloseForm = () => {
-    setActiveModal("none");
+  const openNewManual = () => {
     setEditingRecipe(null);
-    setAiDraftData(null); // 4. Limpeza de Estado (Cleanup)
+    setModalMode("manual");
+    setIsModalOpen(true);
+  };
+
+  const openNewAi = () => {
+    setEditingRecipe(null);
+    setModalMode("ai");
+    setIsModalOpen(true);
   };
 
   const openEdit = (recipe: any) => {
     setEditingRecipe(recipe);
-    setActiveModal("form");
+    setModalMode("manual");
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
+      setRecipesList(prev => prev.filter(r => r.id !== id));
+      toast.error("Ficha técnica removida.");
+    }
   };
 
   return (
@@ -95,13 +97,13 @@ export default function Receitas() {
         <div className="flex items-center gap-3">
           <Button 
             variant="outline"
-            onClick={() => setActiveModal("ai")}
+            onClick={openNewAi}
             className="border-primary/20 text-primary hover:bg-primary/5 font-bold h-11 px-6 transition-all"
           >
-            <span className="mr-2">🪄</span> Importar Ficha Técnica com IA
+            <Sparkles className="mr-2 h-4 w-4" /> Importar com IA
           </Button>
           <Button 
-            onClick={() => { setEditingRecipe(null); setAiDraftData(null); setActiveModal("form"); }} 
+            onClick={openNewManual} 
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-6 transition-all shadow-lg"
           >
             <Plus className="mr-2 h-5 w-5" /> Nova Ficha Técnica
@@ -167,19 +169,13 @@ export default function Receitas() {
         </CardContent>
       </Card>
 
-      <AIImportModal 
-        open={activeModal === "ai"}
-        onOpenChange={(open) => setActiveModal(open ? "ai" : "none")}
-        onProcessComplete={handleAiProcessComplete}
-      />
-
       <RecipeFormModal 
-        key={editingRecipe?.id || aiDraftData?.id || 'new-recipe'}
-        open={activeModal === "form"} 
-        onOpenChange={(open) => !open && handleCloseForm()}
+        key={editingRecipe?.id || 'recipe-modal'}
+        open={isModalOpen} 
+        onOpenChange={setIsModalOpen}
         onSave={handleSaveRecipe}
         initialData={editingRecipe}
-        aiDraftData={aiDraftData} // Passando os dados da IA como prop
+        mode={modalMode}
       />
     </div>
   );
