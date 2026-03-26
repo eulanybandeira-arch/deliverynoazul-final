@@ -79,6 +79,11 @@ export default function Chat() {
 
   const messages = activeChat?.messages || [];
 
+  const userName = useMemo(() => {
+    if (!user) return "";
+    return user.user_metadata?.display_name?.split(" ")[0] || user.email?.split("@")[0] || "Usuário";
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchUserContext();
@@ -434,7 +439,10 @@ export default function Chat() {
         {/* COLUNA ESQUERDA: HISTÓRICO */}
         <div className="w-[280px] border-r bg-muted/10 flex flex-col shrink-0">
           <div className="p-4 border-b">
-            <Button onClick={handleNewChat} className="w-full gap-2 shadow-sm" variant="outline">
+            <Button 
+              onClick={handleNewChat} 
+              className="w-full gap-2 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
+            >
               <Plus className="h-4 w-4" /> Nova Conversa
             </Button>
           </div>
@@ -524,19 +532,19 @@ export default function Chat() {
           {/* Área de Mensagens */}
           <ScrollArea className="flex-1 p-4 md:p-8" ref={scrollRef}>
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center space-y-8 max-w-2xl mx-auto pt-12">
-                <div className="space-y-4">
-                  <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto animate-in zoom-in duration-500">
-                    <Bot className="h-10 w-10 text-primary" />
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="text-3xl font-bold tracking-tight">Olá! Sou a Lucra.</h2>
-                    <p className="text-muted-foreground text-lg">
-                      Sua mentora financeira treinada na metodologia <span className="text-primary font-bold">A Regra da Casa</span>. 
-                      Como posso ajudar seu delivery a lucrar mais hoje?
-                    </p>
-                  </div>
-                </div>
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-2 max-w-2xl mx-auto pt-12">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                  sua gestão no automático. seu negócio noazul.
+                </p>
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  Olá, {userName}
+                </h1>
+                <p className="text-muted-foreground text-lg leading-relaxed mb-6">
+                  Sou a Lucra, Consultora de Inteligência do Sistema Deliverynoazul. Estou aqui para te ajudar a aumentar seu Lucro Real e blindar sua margem. Use os atalhos acima ou me pergunte qualquer coisa sobre seu negócio.
+                </p>
+                <p className="text-xl font-bold text-foreground">
+                  Por onde começamos?
+                </p>
               </div>
             ) : (
               <div className="space-y-8 max-w-4xl mx-auto">
