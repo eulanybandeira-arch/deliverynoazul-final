@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Settings,
   Lock,
+  Store
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -110,6 +111,7 @@ export function MobileSidebar() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-3 mb-1">
                 Estratégia
               </p>
+              {renderItem({ title: "Marketplaces", url: "/marketplaces", icon: Store })}
               {renderItem({ title: "Assistente AI", url: "/chat", icon: MessageSquare })}
             </div>
           </nav>

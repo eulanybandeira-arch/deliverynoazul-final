@@ -9,7 +9,8 @@ import {
   AlertTriangle, 
   MessageSquare, 
   Settings, 
-  Lock 
+  Lock,
+  Store
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -126,6 +127,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {renderMenuItem({ title: "Marketplaces", url: "/marketplaces", icon: Store })}
               {renderMenuItem({ title: "Assistente AI", url: "/chat", icon: MessageSquare })}
             </SidebarMenu>
           </SidebarGroupContent>

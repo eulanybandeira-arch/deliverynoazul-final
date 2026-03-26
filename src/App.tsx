@@ -32,7 +32,8 @@ import Vsl from "./pages/Vsl";
 import PrepBases from "./pages/PrepBases";
 import PrepBaseDetail from "./pages/PrepBaseDetail";
 import Desperdicios from "./pages/Desperdicios";
-import { ThemeProvider } from "@/components/theme-provider";
+import Marketplaces from "./pages/Marketplaces";
+import { ThemeProvider } from "@/theme-provider";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="/balanco-estoque" element={<InventoryBalance />} />
               <Route path="/relatorio-compras" element={<PurchaseReport />} />
               <Route path="/equipamentos" element={<Equipamentos />} />
+              <Route path="/marketplaces" element={<Marketplaces />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/admin/conhecimento" element={<AdminKnowledge />} />
