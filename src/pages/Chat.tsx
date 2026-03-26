@@ -474,11 +474,8 @@ export default function Chat() {
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-primary">
                   Olá, {userName}
                 </h1>
-                <p className="text-muted-foreground text-lg font-light leading-relaxed mb-6">
+                <p className="text-muted-foreground text-lg font-light leading-relaxed mb-8">
                   Me pergunte qualquer coisa sobre seu negócio.
-                </p>
-                <p className="text-xl text-foreground mb-8">
-                  Por onde começamos?
                 </p>
                 
                 {/* Atalhos Sugeridos (Estilo Gemini) */}
@@ -549,7 +546,7 @@ export default function Chat() {
           </ScrollArea>
 
           {/* Input de Mensagem */}
-          <div className="p-6 border-t bg-background/80 backdrop-blur-md shrink-0">
+          <div className="p-6 bg-background/80 backdrop-blur-md shrink-0">
             <div className="max-w-4xl mx-auto">
               {attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
