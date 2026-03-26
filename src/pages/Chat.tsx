@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Send, Bot, User, Loader2, Trash2, Paperclip, X, 
-  Image as ImageIcon, Plus, MessageSquare, Clock
+  Image as ImageIcon, Plus, MessageSquare, Clock,
+  TrendingUp, AlertTriangle, HelpCircle, BarChart3
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,13 @@ interface UserContext {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+
+const SUGGESTED_PROMPTS = [
+  { label: "↗ Análise do Lucro", message: "Quero fazer uma análise detalhada do meu lucro real este mês. O que os dados dizem?" },
+  { label: "⚠ Alertas de Preço de Insumos", message: "Quais insumos tiveram maior variação de preço recentemente e como isso afeta minha margem?" },
+  { label: "❓ Como precificar corretamente?", message: "Me ensine a metodologia correta para precificar meus pratos e garantir que não estou pagando para trabalhar." },
+  { label: "📈 Como descobrir meu CMV Real", message: "Como eu calculo meu CMV Real (Estoque Inicial + Compras - Estoque Final) usando o sistema?" },
+];
 
 export default function Chat() {
   const { user } = useAuth();
@@ -459,7 +467,7 @@ export default function Chat() {
           {/* Área de Mensagens */}
           <ScrollArea className="flex-1 p-4 md:p-8" ref={scrollRef}>
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center space-y-2 max-w-2xl mx-auto pt-12">
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-2 max-w-3xl mx-auto pt-12">
                 <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground mb-2">
                   Sua gestão no automático. Seu negócio noazul
                 </p>
@@ -469,9 +477,22 @@ export default function Chat() {
                 <p className="text-muted-foreground text-lg font-light leading-relaxed mb-6">
                   Me pergunte qualquer coisa sobre seu negócio.
                 </p>
-                <p className="text-xl text-foreground">
+                <p className="text-xl text-foreground mb-8">
                   Por onde começamos?
                 </p>
+                
+                {/* Atalhos Sugeridos (Estilo Gemini) */}
+                <div className="flex flex-wrap justify-center gap-2 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+                  {SUGGESTED_PROMPTS.map((prompt, index) => (
+                    <button
+                      key={index}
+                      onClick={() => streamChat(prompt.message)}
+                      className="px-4 py-2 rounded-full border border-border/50 bg-background/50 text-sm text-muted-foreground hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-200 shadow-sm"
+                    >
+                      {prompt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="space-y-8 max-w-4xl mx-auto">
