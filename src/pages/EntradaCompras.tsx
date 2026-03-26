@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,21 @@ const MOCK_REVIEW_ITEMS = [
 
 export default function EntradaCompras() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      toast.success(`Arquivo "${file.name}" selecionado!`, {
+        description: "Iniciando leitura inteligente dos dados...",
+      });
+      // Aqui entraria a lógica de upload/processamento real
+    }
+  };
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-10">
@@ -57,7 +72,17 @@ export default function EntradaCompras() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="border-2 border-dashed border-primary/30 bg-background/50 rounded-3xl p-12 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept=".xml,.pdf,.jpg,.jpeg,.png"
+            onChange={handleFileChange}
+          />
+          <div 
+            onClick={handleFileClick}
+            className="border-2 border-dashed border-primary/30 bg-background/50 rounded-3xl p-12 flex flex-col items-center justify-center text-center space-y-4 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group"
+          >
             <div className="p-4 bg-primary/10 rounded-full group-hover:scale-110 transition-transform">
               <Upload className="h-8 w-8 text-primary" />
             </div>
