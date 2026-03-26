@@ -62,20 +62,20 @@ export function AppSidebar() {
 
     return (
       <SidebarMenuItem key={item.url}>
-        <SidebarMenuButton asChild tooltip={item.title} className="h-auto py-2 group">
+        <SidebarMenuButton asChild tooltip={item.title} className="h-auto py-2">
           <NavLink
             to={item.url}
             end
             className={({ isActive }) =>
               cn(
-                "transition-all duration-200 flex items-center gap-2 w-full px-2 py-1.5 rounded-md cursor-pointer",
+                "transition-all duration-200 flex items-center gap-2 w-full px-2 py-1.5 rounded-md",
                 isActive 
                   ? "font-bold bg-accent text-accent-foreground" 
                   : "hover:bg-accent/50 hover:text-accent-foreground"
               )
             }
           >
-            <item.icon className="h-4 w-4 shrink-0 group-hover:scale-110 transition-transform" />
+            <item.icon className="h-4 w-4 shrink-0" />
             <span className="leading-tight">{item.title}</span>
           </NavLink>
         </SidebarMenuButton>
@@ -87,7 +87,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r sidebar-custom top-14 hidden md:flex">
       <SidebarHeader>
         <div className="flex items-center justify-end p-2">
-          <SidebarTrigger className="hover:bg-accent transition-colors" />
+          <SidebarTrigger />
         </div>
       </SidebarHeader>
       

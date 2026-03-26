@@ -31,7 +31,7 @@ export function Header() {
         <MobileSidebar />
         <a
           href="/dashboard"
-          className="flex items-center gap-2 font-semibold cursor-pointer hover:opacity-80 transition-all duration-200"
+          className="flex items-center gap-2 font-semibold"
           aria-label="Ir para o dashboard"
         >
           <img src={`/logo.png?t=${new Date().getTime()}`} alt="Logo" className="h-8 w-8" />
@@ -39,7 +39,9 @@ export function Header() {
             <span className="italic bg-gradient-to-r from-cyan-400 to-primary bg-clip-text text-transparent">
               delivery
             </span>
-            <span className="text-primary">noazul</span>
+            <span className="text-primary">
+              noazul
+            </span>
           </span>
         </a>
       </div>
@@ -61,7 +63,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 hover:bg-accent transition-colors"
+              className="h-8 w-8"
               onClick={() => {
                 setSearchOpen(false);
                 setSearchTerm("");
@@ -74,7 +76,7 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 hover:bg-accent transition-colors"
+            className="h-8 w-8"
             aria-label="Buscar"
             onClick={() => setSearchOpen(true)}
           >
