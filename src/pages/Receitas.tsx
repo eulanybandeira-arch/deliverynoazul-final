@@ -91,15 +91,15 @@ export default function Receitas() {
   };
 
   const handleAiProcessComplete = (data: any) => {
-    // Primeiro fechamos o modal de IA
+    // 1. Primeiro definimos os dados
+    setEditingRecipe(data);
+    // 2. Fechamos o modal de IA
     setIsAiModalOpen(false);
-    
-    // Pequeno delay para garantir que o Radix UI limpe o portal antes de abrir o próximo
+    // 3. Abrimos o formulário principal com um delay seguro para o Radix UI
     setTimeout(() => {
-      setEditingRecipe(data);
       setIsModalOpen(true);
-      toast.success("Receita extraída com sucesso!");
-    }, 100);
+      toast.success("Receita extraída! Revise os processos.");
+    }, 200);
   };
 
   const handleDelete = (id: string) => {
