@@ -20,12 +20,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useInventory } from "@/hooks/useInventory";
 import { ClosureDetailsModal } from "@/components/inventory/ClosureDetailsModal";
+import { NewCountModal } from "@/components/inventory/NewCountModal";
 
 export default function Inventario() {
   const { items: inventoryItems, loading } = useInventory();
   const [items, setItems] = useState<any[]>([]);
   const [inventoryDate, setInventoryDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedClosure, setSelectedClosure] = useState<any | null>(null);
+  const [isNewCountModalOpen, setIsNewCountModalOpen] = useState(false);
   const [history, setHistory] = useState<any[]>([
     { 
       id: "h1", 
@@ -42,7 +44,7 @@ export default function Inventario() {
 
   // Inicializa os itens a partir do hook de inventário real
   useEffect(() => {
-    if (inventoryItems.length > 0) {
+    if (inventoryItems.length > 0 && items.length === 0) {
       setItems(inventoryItems.map(i => ({
         id: i.id,
         name: i.name,
@@ -53,7 +55,7 @@ export default function Inventario() {
         realCount: undefined
       })));
     }
-  }, [inventoryItems]);
+  }, [inventoryItems, items.length]);
 
   const pendingItems = useMemo(() => items.filter(i => !i.confirmed), [items]);
   const countedItems = useMemo(() => items.filter(i => i.confirmed), [items]);
@@ -75,13 +77,18 @@ export default function Inventario() {
     toast.success(`${item.name} registrado.`);
   };
 
-  const handleNewCount = () => {
-    if (countedItems.length > 0) {
-      if (!confirm("Deseja descartar a contagem atual e iniciar uma nova?")) return;
-    }
-    setItems(items.map(i => ({ ...i, confirmed: false, realCount: undefined })));
-    setInventoryDate(new Date().toISOString().split('T')[0]);
-    toast.info("Nova contagem iniciada.");
+  const handleStartNewCount = (date: string) => {
+    setInventoryDate(date);
+    setItems(inventoryItems.map(i => ({
+      id: i.id,
+      name: i.name,
+      category: i.category_logistics,
+      unit: i.stock_unit || i.unit || "un",
+      expected: i.current_stock,
+      confirmed: false,
+      realCount: undefined
+    })));
+    toast.success(`Nova contagem iniciada para ${new Date(date).toLocaleDateString('pt-BR')}`);
   };
 
   const handleFinalize = () => {
@@ -110,14 +117,10 @@ export default function Inventario() {
     toast.success("Inventário fechado com sucesso!", {
       description: "Os dados foram salvos no histórico e o estoque foi atualizado."
     });
-    
-    // Opcional: Resetar após fechar
-    // setItems(items.map(i => ({ ...i, confirmed: false, realCount: undefined })));
   };
 
   const handlePrint = () => {
     toast.info("Gerando PDF para contagem física...");
-    // Simulação de impressão
     window.print();
   };
 
@@ -145,14 +148,11 @@ export default function Inventario() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-card/40 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-border/40">
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-            <input 
-              type="date" 
-              value={inventoryDate} 
-              onChange={(e) => setInventoryDate(e.target.value)}
-              className="border-none bg-transparent h-7 w-32 p-0 focus-visible:outline-none font-bold text-sm text-primary"
-            />
+            <span className="font-bold text-sm text-primary">
+              {new Date(inventoryDate).toLocaleDateString('pt-BR')}
+            </span>
           </div>
-          <Button variant="outline" className="gap-2" onClick={handleNewCount}>
+          <Button variant="outline" className="gap-2" onClick={() => setIsNewCountModalOpen(true)}>
             <Plus className="h-4 w-4" /> Nova Contagem
           </Button>
           <Button variant="outline" className="gap-2" onClick={handlePrint}>
@@ -298,6 +298,12 @@ export default function Inventario() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <NewCountModal 
+        open={isNewCountModalOpen} 
+        onOpenChange={setIsNewCountModalOpen} 
+        onConfirm={handleStartNewCount} 
+      />
 
       <ClosureDetailsModal 
         open={!!selectedClosure} 
