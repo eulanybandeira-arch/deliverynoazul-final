@@ -8,6 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { 
   Settings2, 
   TrendingDown, 
   Smartphone,
@@ -15,9 +20,10 @@ import {
   Zap,
   Bike,
   FileDown,
-  ArrowRightLeft,
   LayoutGrid,
-  ChefHat
+  ChefHat,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/pricing";
@@ -59,6 +65,7 @@ export default function Marketplaces() {
   const [selectedChannelId, setSelectedChannelId] = useState("ifood-entrega");
   const [selectedRecipeId, setSelectedRecipeId] = useState("r1");
   const [viewMode, setViewMode] = useState<"channel" | "recipe">("channel");
+  const [openChannelId, setOpenChannelId] = useState<string | null>(null);
 
   const handleUpdateFee = (channelId: string, field: keyof ChannelFees, value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -116,157 +123,175 @@ export default function Marketplaces() {
   }, [channels, selectedRecipeId]);
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700 pb-10">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-10">
       <header className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-foreground">Marketplaces & Canais</h1>
         <p className="text-muted-foreground">Configure as taxas das plataformas e descubra a erosão real do seu lucro.</p>
       </header>
 
-      {/* SEÇÃO 1: SETUP DE TAXAS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* SEÇÃO 1: SETUP DE TAXAS - GRID COMPACTO COM ACCORDIONS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {channels.map((channel) => (
-          <Card key={channel.id} className="border-border/40 bg-white dark:bg-card/40 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col">
-            <CardHeader className="pb-4 border-b border-border/20 bg-slate-50/50 dark:bg-muted/20">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner">
-                  <channel.icon className="h-4 w-4" />
+          <Collapsible
+            key={channel.id}
+            open={openChannelId === channel.id}
+            onOpenChange={(isOpen) => setOpenChannelId(isOpen ? channel.id : null)}
+            className="w-full"
+          >
+            <Card className={cn(
+              "border-border/40 bg-white dark:bg-card/40 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden",
+              openChannelId === channel.id && "ring-1 ring-primary/20 shadow-lg"
+            )}>
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-muted/20 transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                      <channel.icon className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-xs font-bold truncate text-foreground">{channel.name}</span>
+                  </div>
+                  {openChannelId === channel.id ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                  )}
                 </div>
-                <CardTitle className="text-sm font-bold truncate text-foreground">{channel.name}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-5 flex-1">
-              <div className="space-y-4">
-                {channel.type === 'salao' ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Maquininha</Label>
-                      <div className="flex items-center gap-1.5">
-                        <Input 
-                          type="number" 
-                          value={channel.transactionFee} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                        <span className="text-xs font-bold text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Descontos</Label>
-                      <div className="flex items-center gap-1.5">
-                        <Input 
-                          type="number" 
-                          value={channel.discounts} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'discounts', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                        <span className="text-xs font-bold text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                  </>
-                ) : channel.type === 'delivery-proprio' ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Gateway/Pix</Label>
-                      <div className="flex items-center gap-1.5">
-                        <Input 
-                          type="number" 
-                          value={channel.transactionFee} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                        <span className="text-xs font-bold text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custo Motoboy</Label>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-muted-foreground">R$</span>
-                        <Input 
-                          type="number" 
-                          value={channel.motoboyCost} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'motoboyCost', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Entrega Cobrada</Label>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-muted-foreground">R$</span>
-                        <Input 
-                          type="number" 
-                          value={channel.deliveryFeeCharged} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'deliveryFeeCharged', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Comissão Base</Label>
-                      <div className="flex items-center gap-1.5">
-                        <Input 
-                          type="number" 
-                          value={channel.baseCommission} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'baseCommission', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                        <span className="text-xs font-bold text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transação</Label>
-                      <div className="flex items-center gap-1.5">
-                        <Input 
-                          type="number" 
-                          value={channel.transactionFee} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                        <span className="text-xs font-bold text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campanhas</Label>
-                      <div className="flex items-center gap-1.5">
-                        <Input 
-                          type="number" 
-                          value={channel.campaigns} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'campaigns', e.target.value)}
-                          className="h-8 w-16 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                        <span className="text-xs font-bold text-muted-foreground">%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-3 border-t border-border/20">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mensalidade</Label>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-muted-foreground">R$</span>
-                        <Input 
-                          type="number" 
-                          value={channel.monthlyFee} 
-                          onChange={(e) => handleUpdateFee(channel.id, 'monthlyFee', e.target.value)}
-                          className="h-8 w-20 text-right font-bold text-xs bg-slate-50/50 dark:bg-background/50 border-border/50"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter className="bg-slate-50/30 dark:bg-muted/10 py-3">
-              <Button variant="ghost" size="sm" className="w-full text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
-                <Settings2 className="h-3 w-3 mr-2" /> Configurar
-              </Button>
-            </CardFooter>
-          </Card>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent className="animate-accordion-down">
+                <CardContent className="pt-4 pb-4 px-4 space-y-4 border-t border-border/20">
+                  <div className="space-y-3">
+                    {channel.type === 'salao' ? (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Maquininha</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input 
+                              type="number" 
+                              value={channel.transactionFee} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
+                              className="h-7 w-14 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                            <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Descontos</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input 
+                              type="number" 
+                              value={channel.discounts} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'discounts', e.target.value)}
+                              className="h-7 w-14 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                            <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                      </>
+                    ) : channel.type === 'delivery-proprio' ? (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Gateway/Pix</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input 
+                              type="number" 
+                              value={channel.transactionFee} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
+                              className="h-7 w-14 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                            <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Custo Motoboy</Label>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-muted-foreground">R$</span>
+                            <Input 
+                              type="number" 
+                              value={channel.motoboyCost} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'motoboyCost', e.target.value)}
+                              className="h-7 w-14 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Taxa Entrega</Label>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-muted-foreground">R$</span>
+                            <Input 
+                              type="number" 
+                              value={channel.deliveryFeeCharged} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'deliveryFeeCharged', e.target.value)}
+                              className="h-7 w-14 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Comissão</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input 
+                              type="number" 
+                              value={channel.baseCommission} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'baseCommission', e.target.value)}
+                              className="h-7 w-14 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                            <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transação</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input 
+                              type="number" 
+                              value={channel.transactionFee} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'transactionFee', e.target.value)}
+                              className="h-7 w-14 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                            <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Campanhas</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Input 
+                              type="number" 
+                              value={channel.campaigns} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'campaigns', e.target.value)}
+                              className="h-7 w-14 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                            <span className="text-[10px] font-bold text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-border/20">
+                          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mensalidade</Label>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-muted-foreground">R$</span>
+                            <Input 
+                              type="number" 
+                              value={channel.monthlyFee} 
+                              onChange={(e) => handleUpdateFee(channel.id, 'monthlyFee', e.target.value)}
+                              className="h-7 w-16 text-right font-bold text-[11px] bg-slate-50/50 dark:bg-background/50 border-border/50"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <Button variant="ghost" size="sm" className="w-full h-7 text-[9px] font-bold uppercase tracking-widest text-primary hover:bg-primary/5" onClick={() => { setOpenChannelId(null); toast.success("Configurações salvas!"); }}>
+                    <Settings2 className="h-3 w-3 mr-1.5" /> Salvar
+                  </Button>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         ))}
       </div>
 
-      {/* SEÇÃO 2: ANÁLISE DE EROSÃO */}
-      <div className="space-y-6">
+      {/* SEÇÃO 2: ANÁLISE DE EROSÃO - AGORA MAIS VISÍVEL */}
+      <div className="space-y-6 pt-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-destructive/10 text-destructive shadow-sm">
