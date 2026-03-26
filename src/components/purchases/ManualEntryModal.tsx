@@ -152,7 +152,7 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
                     locale={ptBR}
                     className="w-full"
                     classNames={{
-                      months: "w-full",
+                      months: "w-full flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
                       month: "w-full space-y-4",
                       table: "w-full border-collapse space-y-1",
                       head_row: "flex w-full",
