@@ -11,7 +11,7 @@ import {
   Check, 
   CheckCircle2,
   Eye,
-  Printer,
+  FileText,
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { useInventory } from "@/hooks/useInventory";
 import { ClosureDetailsModal } from "@/components/inventory/ClosureDetailsModal";
 import { NewCountModal } from "@/components/inventory/NewCountModal";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function Inventario() {
   const { items: inventoryItems, loading } = useInventory();
@@ -35,7 +37,8 @@ export default function Inventario() {
       responsible: "Admin",
       items: [
         { name: "Picanha Argentina", expected: 10, counted: 10, unit: "kg" },
-        { name: "Queijo Mussarela", expected: 5, counted: 4.8, unit: "kg" }
+        { name: "Queijo Mussarela", expected: 5, counted: 4.8, unit: "kg" },
+        { name: "Tomate Italiano", expected: 20, counted: 22, unit: "kg" }
       ]
     }
   ]);
@@ -114,9 +117,71 @@ export default function Inventario() {
     toast.success("Inventário fechado com sucesso!");
   };
 
-  const handlePrint = () => {
-    toast.info("Gerando PDF para contagem física...");
-    window.print();
+  const handleUpdateHistory = (updated: any) => {
+    setHistory(prev => prev.map(h => h.id === updated.id ? updated : h));
+    setSelectedClosure(updated);
+  };
+
+  const handleDeleteHistory = (id: string) => {
+    setHistory(prev => prev.filter(h => h.id !== id));
+    toast.success("Registro de inventário excluído.");
+  };
+
+  const generatePDF = (closure: any) => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text("Relatório de Inventário de Estoque", 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Data: ${closure.date}`, 14, 30);
+    doc.text(`Responsável: ${closure.responsible}`, 14, 35);
+    doc.text(`Status: ${closure.status}`, 14, 40);
+    
+    // Table
+    const tableData = closure.items.map((item: any) => {
+      const diff = item.counted - item.expected;
+      return [
+        item.name,
+        `${item.expected} ${item.unit}`,
+        `${item.counted} ${item.unit}`,
+        `${diff > 0 ? '+' : ''}${diff} ${item.unit}`
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 50,
+      head: [['Insumo', 'Esperado', 'Contado', 'Diferença']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 43, 91] }, // Cor primária do sistema
+    });
+
+    doc.save(`Inventario_${closure.date.replace(/\//g, '-')}.pdf`);
+    toast.success("PDF gerado com sucesso!");
+  };
+
+  const handlePrintList = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Lista para Contagem Física de Estoque", 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Data de Referência: ${new Date(inventoryDate).toLocaleDateString('pt-BR')}`, 14, 30);
+    
+    const tableData = items.map(i => [i.name, i.category, `(   ) ${i.unit}`]);
+    
+    autoTable(doc, {
+      startY: 40,
+      head: [['Insumo', 'Categoria', 'Quantidade Contada']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [0, 43, 91] },
+    });
+
+    doc.save(`Lista_Contagem_${inventoryDate}.pdf`);
+    toast.success("Lista de contagem gerada!");
   };
 
   if (loading) {
@@ -159,8 +224,8 @@ export default function Inventario() {
               <TabsTrigger value="history">Histórico</TabsTrigger>
             </TabsList>
             
-            <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
-              <Printer className="h-4 w-4" /> Imprimir Lista
+            <Button variant="outline" size="sm" className="gap-2" onClick={handlePrintList}>
+              <FileText className="h-4 w-4" /> Gerar PDF de Contagem
             </Button>
           </div>
 
@@ -276,11 +341,11 @@ export default function Inventario() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => setSelectedClosure(h)} title="Visualizar Detalhes">
+                          <Button variant="ghost" size="icon" onClick={() => setSelectedClosure(h)} title="Visualizar e Editar">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={handlePrint} title="Imprimir Relatório">
-                            <Printer className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" onClick={() => generatePDF(h)} title="Gerar PDF">
+                            <FileText className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -302,7 +367,9 @@ export default function Inventario() {
       <ClosureDetailsModal 
         open={!!selectedClosure} 
         onOpenChange={(open) => !open && setSelectedClosure(null)} 
-        closure={selectedClosure} 
+        closure={selectedClosure}
+        onUpdate={handleUpdateHistory}
+        onDelete={handleDeleteHistory}
       />
     </div>
   );
