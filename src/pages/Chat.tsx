@@ -1,14 +1,19 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Bot, User, Loader2, Trash2, TrendingUp, AlertTriangle, HelpCircle, Paperclip, X, Image as ImageIcon, ChefHat } from "lucide-react";
+import { 
+  Send, Bot, User, Loader2, Trash2, TrendingUp, AlertTriangle, 
+  HelpCircle, Paperclip, X, Image as ImageIcon, ChefHat, Plus,
+  MessageSquare, Clock, ChevronRight
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Attachment {
   file: File;
@@ -20,6 +25,13 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   attachments?: { name: string; url?: string; type: string }[];
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  date: string;
 }
 
 interface RecipeForAnalysis {
@@ -38,22 +50,36 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const QUICK_SUGGESTIONS = [
   { label: "Análise do Lucro", icon: TrendingUp, message: "Quero analisar meu lucro. Me ajude a escolher o período: posso ver por dia específico, semana, quinzena ou mês?" },
-  { label: "Alertas de Preço de Insumos", icon: AlertTriangle, message: "Quais insumos estão com preço alto ou estoque baixo? Me alerte sobre possíveis prejuízos." },
-  { label: "Como precificar corretamente?", icon: HelpCircle, message: "Me explique como devo precificar meus produtos para garantir lucro. Quais fatores devo considerar?" },
+  { label: "Alertas de Preço", icon: AlertTriangle, message: "Quais insumos estão com preço alto ou estoque baixo? Me alerte sobre possíveis prejuízos." },
+  { label: "Como precificar?", icon: HelpCircle, message: "Me explique como devo precificar meus produtos para garantir lucro. Quais fatores devo considerar?" },
 ];
 
 export default function Chat() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([]);
+  
+  // Estados de Sessão e Histórico
+  const [chats, setChats] = useState<ChatSession[]>([
+    { id: "1", title: "Análise de CMV Hambúrguer", messages: [], date: new Date().toISOString() },
+    { id: "2", title: "Dúvida sobre Taxas iFood", messages: [], date: new Date(Date.now() - 86400000).toISOString() },
+  ]);
+  const [activeChatId, setActiveChatId] = useState<string>("1");
+  
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [recipesForAnalysis, setRecipesForAnalysis] = useState<RecipeForAnalysis[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>("");
+  
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const activeChat = useMemo(() => 
+    chats.find(c => c.id === activeChatId) || chats[0], 
+  [chats, activeChatId]);
+
+  const messages = activeChat?.messages || [];
 
   // Fetch user context and recipes on mount
   useEffect(() => {
@@ -117,6 +143,29 @@ export default function Chat() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const handleNewChat = () => {
+    const newId = crypto.randomUUID();
+    const newChat: ChatSession = {
+      id: newId,
+      title: "Nova Conversa",
+      messages: [],
+      date: new Date().toISOString()
+    };
+    setChats([newChat, ...chats]);
+    setActiveChatId(newId);
+  };
+
+  const deleteChat = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = chats.filter(c => c.id !== id);
+    setChats(updated);
+    if (activeChatId === id && updated.length > 0) {
+      setActiveChatId(updated[0].id);
+    } else if (updated.length === 0) {
+      handleNewChat();
+    }
+  };
 
   const renderMessageContent = (content: string) => {
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -253,7 +302,14 @@ export default function Chat() {
       content: userMessage,
       attachments: messageAttachments,
     };
-    setMessages((prev) => [...prev, userMsg]);
+    
+    // Atualiza mensagens do chat ativo
+    setChats(prev => prev.map(c => 
+      c.id === activeChatId 
+        ? { ...c, messages: [...c.messages, userMsg], title: c.messages.length === 0 ? userMessage.substring(0, 30) + "..." : c.title } 
+        : c
+    ));
+    
     setIsLoading(true);
 
     let assistantContent = "";
@@ -285,7 +341,12 @@ export default function Chat() {
       const decoder = new TextDecoder();
       let textBuffer = "";
 
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      // Adiciona placeholder para a resposta da assistente
+      setChats(prev => prev.map(c => 
+        c.id === activeChatId 
+          ? { ...c, messages: [...c.messages, { role: "assistant", content: "" }] } 
+          : c
+      ));
 
       while (true) {
         const { done, value } = await reader.read();
@@ -310,14 +371,14 @@ export default function Chat() {
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               assistantContent += content;
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastIndex = newMessages.length - 1;
-                if (newMessages[lastIndex]?.role === "assistant") {
-                  newMessages[lastIndex] = { role: "assistant", content: assistantContent };
+              setChats(prev => prev.map(c => {
+                if (c.id === activeChatId) {
+                  const newMsgs = [...c.messages];
+                  newMsgs[newMsgs.length - 1] = { role: "assistant", content: assistantContent };
+                  return { ...c, messages: newMsgs };
                 }
-                return newMessages;
-              });
+                return c;
+              }));
             }
           } catch {
             textBuffer = line + "\n" + textBuffer;
@@ -325,44 +386,9 @@ export default function Chat() {
           }
         }
       }
-
-      if (textBuffer.trim()) {
-        for (let raw of textBuffer.split("\n")) {
-          if (!raw) continue;
-          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-          if (raw.startsWith(":") || raw.trim() === "") continue;
-          if (!raw.startsWith("data: ")) continue;
-          const jsonStr = raw.slice(6).trim();
-          if (jsonStr === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              assistantContent += content;
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastIndex = newMessages.length - 1;
-                if (newMessages[lastIndex]?.role === "assistant") {
-                  newMessages[lastIndex] = { role: "assistant", content: assistantContent };
-                }
-                return newMessages;
-              });
-            }
-          } catch {
-            /* ignore */
-          }
-        }
-      }
     } catch (error) {
       console.error("Chat error:", error);
       toast.error(error instanceof Error ? error.message : "Erro ao enviar mensagem");
-      setMessages((prev) => {
-        const lastMsg = prev[prev.length - 1];
-        if (lastMsg?.role === "assistant" && lastMsg.content === "") {
-          return prev.slice(0, -1);
-        }
-        return prev;
-      });
     } finally {
       setIsLoading(false);
     }
@@ -378,7 +404,6 @@ export default function Chat() {
     let uploadedAttachments: { name: string; url?: string; type: string }[] = [];
     if (attachments.length > 0) {
       uploadedAttachments = await uploadAttachments();
-      // Clean up previews
       attachments.forEach(att => {
         if (att.preview) URL.revokeObjectURL(att.preview);
       });
@@ -400,12 +425,6 @@ export default function Chat() {
     streamChat(message);
   };
 
-
-  const clearChat = () => {
-    setMessages([]);
-    toast.success("Conversa limpa");
-  };
-
   if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -415,207 +434,258 @@ export default function Chat() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="h-[calc(100vh-120px)] flex flex-col space-y-4">
+      <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-primary dark:text-foreground">Lucra</h1>
           <p className="text-muted-foreground">Consultor de Inteligência do Sistema Delivery no Azul</p>
         </div>
-        {messages.length > 0 && (
-          <Button variant="outline" size="sm" onClick={clearChat}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Limpar
-          </Button>
-        )}
       </div>
 
-      {/* Quick Suggestions */}
-      <div className="flex flex-wrap gap-2">
-        {QUICK_SUGGESTIONS.map((suggestion, index) => (
-          <Button
-            key={index}
-            variant="outline"
-            size="sm"
-            onClick={() => handleQuickSuggestion(suggestion.message)}
-            disabled={isLoading}
-            className="gap-2"
-          >
-            <suggestion.icon className="h-4 w-4" />
-            {suggestion.label}
-          </Button>
-        ))}
-      </div>
-
-      {/* Recipe Analysis - Inline Select */}
-      {recipesForAnalysis.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Select 
-            value={selectedRecipeId} 
-            onValueChange={(value) => {
-              setSelectedRecipeId(value);
-              const recipe = recipesForAnalysis.find(r => r.id === value);
-              if (recipe) {
-                const message = `Analise detalhadamente a receita "${recipe.name}" com todos os custos, margens e sugestões de melhoria.`;
-                streamChat(message, undefined, value);
-                setSelectedRecipeId("");
-              }
-            }}
-          >
-            <SelectTrigger className="w-auto gap-2 border-dashed">
-              <ChefHat className="h-4 w-4" />
-              <SelectValue placeholder="Analisar uma receita..." />
-            </SelectTrigger>
-            <SelectContent>
-              {recipesForAnalysis.map((recipe) => (
-                <SelectItem key={recipe.id} value={recipe.id}>
-                  {recipe.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      <Card className="h-[calc(100vh-340px)] min-h-[400px] flex flex-col">
-        <CardHeader className="py-3 border-b">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
-            Seu Sócio Financeiro de Bolso
-          </CardTitle>
-        </CardHeader>
-
-        <ScrollArea className="flex-1 p-4 md:p-6" ref={scrollRef}>
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-              <Bot className="h-12 w-12 mb-4 opacity-50" />
-              <p className="font-medium">Olá! Sou a Lucra, sua consultora financeira.</p>
-              <p className="text-sm mt-2 max-w-md">
-                Estou aqui para te ajudar a aumentar seu <strong>Lucro Real</strong> e blindar sua margem. Use os atalhos acima ou me pergunte qualquer coisa sobre seu negócio.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Bot className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
+      <Card className="flex-1 flex overflow-hidden border-border/40 shadow-2xl">
+        {/* COLUNA ESQUERDA: HISTÓRICO */}
+        <div className="w-[280px] border-r bg-muted/30 flex flex-col shrink-0">
+          <div className="p-4 border-b bg-background/50">
+            <Button onClick={handleNewChat} className="w-full gap-2 shadow-md" size="lg">
+              <Plus className="h-4 w-4" /> Nova Conversa
+            </Button>
+          </div>
+          
+          <ScrollArea className="flex-1">
+            <div className="p-3 space-y-6">
+              {/* Grupo: Hoje */}
+              <div className="space-y-1">
+                <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-2">Hoje</p>
+                {chats.map(chat => (
                   <div
-                    className={`rounded-xl px-4 py-3 ${
-                      msg.role === "user"
-                        ? "max-w-[80%] bg-primary text-primary-foreground"
-                        : "max-w-[90%] md:max-w-[85%] bg-muted"
-                    }`}
-                  >
-                    {/* Show attachments if any */}
-                    {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {msg.attachments.map((att, attIndex) => (
-                          <div key={attIndex} className="flex items-center gap-1 text-xs bg-background/20 rounded px-2 py-1">
-                            {att.type === "image" ? (
-                              <ImageIcon className="h-3 w-3" />
-                            ) : (
-                              <Paperclip className="h-3 w-3" />
-                            )}
-                            <span className="truncate max-w-[100px]">{att.name}</span>
-                          </div>
-                        ))}
-                      </div>
+                    key={chat.id}
+                    onClick={() => setActiveChatId(chat.id)}
+                    className={cn(
+                      "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200",
+                      activeChatId === chat.id 
+                        ? "bg-primary/10 text-primary font-semibold" 
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
                     )}
-                    <div className={`whitespace-pre-wrap ${msg.role === "assistant" ? "text-base leading-relaxed" : "text-sm"}`}>
-                      {msg.role === "assistant" ? renderMessageContent(msg.content || "...") : msg.content || "..."}
-                    </div>
+                  >
+                    <MessageSquare className={cn("h-4 w-4 shrink-0", activeChatId === chat.id ? "text-primary" : "text-muted-foreground/50")} />
+                    <span className="text-sm truncate pr-6">{chat.title}</span>
+                    <button
+                      onClick={(e) => deleteChat(chat.id, e)}
+                      className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                  {msg.role === "user" && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                      <User className="h-4 w-4 text-primary-foreground" />
-                    </div>
-                  )}
-                </div>
-              ))}
-              {isLoading && messages[messages.length - 1]?.role === "user" && (
-                <div className="flex gap-3 justify-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Loader2 className="h-4 w-4 text-primary animate-spin" />
-                  </div>
-                  <div className="bg-muted rounded-lg px-4 py-2">
-                    <p className="text-sm text-muted-foreground">Analisando...</p>
-                  </div>
-                </div>
+                ))}
+              </div>
+            </div>
+          </ScrollArea>
+          
+          <div className="p-4 border-t bg-background/50">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+              <Clock className="h-3 w-3" /> Histórico de 30 dias
+            </div>
+          </div>
+        </div>
+
+        {/* COLUNA DIREITA: CHAT ATIVO */}
+        <div className="flex-1 flex flex-col bg-background relative">
+          {/* Header do Chat */}
+          <div className="p-4 border-b flex items-center justify-between bg-background/50 backdrop-blur-sm z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Bot className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold leading-none">{activeChat?.title}</h3>
+                <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">Sessão de Inteligência Ativa</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {recipesForAnalysis.length > 0 && (
+                <Select 
+                  value={selectedRecipeId} 
+                  onValueChange={(value) => {
+                    setSelectedRecipeId(value);
+                    const recipe = recipesForAnalysis.find(r => r.id === value);
+                    if (recipe) {
+                      streamChat(`Analise detalhadamente a receita "${recipe.name}" com todos os custos, margens e sugestões de melhoria.`, undefined, value);
+                      setSelectedRecipeId("");
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[200px] h-8 text-xs gap-2 border-dashed">
+                    <ChefHat className="h-3.5 w-3.5" />
+                    <SelectValue placeholder="Analisar uma receita..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {recipesForAnalysis.map((recipe) => (
+                      <SelectItem key={recipe.id} value={recipe.id}>{recipe.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
-          )}
-        </ScrollArea>
+          </div>
 
-        <CardContent className="border-t p-4">
-          {/* Attachment previews */}
-          {attachments.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {attachments.map((att, index) => (
-                <div 
-                  key={index} 
-                  className="relative group bg-muted rounded-lg overflow-hidden"
-                >
-                  {att.type === "image" && att.preview ? (
-                    <img src={att.preview} alt={att.file.name} className="h-16 w-16 object-cover" />
-                  ) : (
-                    <div className="h-16 w-16 flex items-center justify-center">
-                      <Paperclip className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(index)}
-                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-1 truncate">
-                    {att.file.name}
+          {/* Área de Mensagens */}
+          <ScrollArea className="flex-1 p-4 md:p-6" ref={scrollRef}>
+            {messages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-8 max-w-2xl mx-auto pt-12">
+                <div className="space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto animate-in zoom-in duration-500">
+                    <Bot className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold tracking-tight">Olá! Sou a Lucra.</h2>
+                    <p className="text-muted-foreground">
+                      Sua mentora financeira treinada na metodologia <span className="text-primary font-bold">A Regra da Casa</span>. 
+                      Como posso ajudar seu delivery a lucrar mais hoje?
+                    </p>
                   </div>
                 </div>
-              ))}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                  {QUICK_SUGGESTIONS.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleQuickSuggestion(suggestion.message)}
+                      className="flex flex-col items-center gap-3 p-4 rounded-xl border bg-card hover:border-primary hover:bg-primary/5 transition-all duration-300 group text-center"
+                    >
+                      <div className="p-2 rounded-lg bg-muted group-hover:bg-primary/10 transition-colors">
+                        <suggestion.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-wider">{suggestion.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6 max-w-4xl mx-auto">
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
+                      msg.role === "user" ? "flex-row-reverse" : "flex-row"
+                    )}
+                  >
+                    <div className={cn(
+                      "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
+                      msg.role === "user" ? "bg-primary" : "bg-muted border"
+                    )}>
+                      {msg.role === "user" ? <User className="h-4 w-4 text-primary-foreground" /> : <Bot className="h-4 w-4 text-primary" />}
+                    </div>
+                    
+                    <div className={cn(
+                      "flex flex-col space-y-2 max-w-[85%]",
+                      msg.role === "user" ? "items-end" : "items-start"
+                    )}>
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {msg.attachments.map((att, attIndex) => (
+                            <div key={attIndex} className="flex items-center gap-2 text-[10px] font-bold uppercase bg-muted/50 border rounded-lg px-2 py-1">
+                              {att.type === "image" ? <ImageIcon className="h-3 w-3" /> : <Paperclip className="h-3 w-3" />}
+                              <span className="truncate max-w-[120px]">{att.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className={cn(
+                        "rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
+                        msg.role === "user" 
+                          ? "bg-primary text-primary-foreground rounded-tr-none" 
+                          : "bg-muted/50 border border-border/40 rounded-tl-none"
+                      )}>
+                        {msg.role === "assistant" ? renderMessageContent(msg.content || "...") : msg.content}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isLoading && messages[messages.length - 1]?.role === "user" && (
+                  <div className="flex gap-4 animate-pulse">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted border flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                    </div>
+                    <div className="bg-muted/30 border border-dashed rounded-2xl px-4 py-3 h-10 w-24" />
+                  </div>
+                )}
+              </div>
+            )}
+          </ScrollArea>
+
+          {/* Input de Mensagem */}
+          <div className="p-4 border-t bg-background/80 backdrop-blur-md shrink-0">
+            <div className="max-w-4xl mx-auto">
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {attachments.map((att, index) => (
+                    <div key={index} className="relative group bg-muted rounded-xl overflow-hidden border shadow-sm">
+                      {att.type === "image" && att.preview ? (
+                        <img src={att.preview} alt={att.file.name} className="h-14 w-14 object-cover" />
+                      ) : (
+                        <div className="h-14 w-14 flex items-center justify-center bg-primary/5">
+                          <Paperclip className="h-5 w-5 text-primary" />
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="absolute top-0.5 right-0.5 bg-destructive text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <form onSubmit={handleSubmit} className="relative flex items-end gap-2 bg-muted/50 border border-border/40 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf,.txt,.doc,.docx"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-xl hover:bg-primary/10 hover:text-primary"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                >
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+                
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Pergunte sobre seu lucro, CMV ou equipe..."
+                  className="flex-1 min-h-[40px] max-h-32 border-none bg-transparent focus-visible:ring-0 resize-none py-2.5 text-sm"
+                  rows={1}
+                  disabled={isLoading}
+                />
+                
+                <Button 
+                  type="submit" 
+                  disabled={(!input.trim() && attachments.length === 0) || isLoading} 
+                  size="icon" 
+                  className="h-10 w-10 shrink-0 rounded-xl shadow-lg"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </form>
+              <p className="text-[9px] text-center text-muted-foreground mt-2 uppercase tracking-widest font-bold opacity-50">
+                Lucra AI • Inteligência Financeira para Deliveries
+              </p>
             </div>
-          )}
-          
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf,.txt,.doc,.docx"
-              multiple
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-11 w-11 flex-shrink-0"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading}
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Pergunte sobre seu negócio..."
-              className="resize-none min-h-[44px] max-h-32"
-              rows={1}
-              disabled={isLoading}
-            />
-            <Button type="submit" disabled={(!input.trim() && attachments.length === 0) || isLoading} size="icon" className="h-11 w-11">
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </form>
-        </CardContent>
+          </div>
+        </div>
       </Card>
     </div>
   );
