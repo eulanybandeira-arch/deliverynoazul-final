@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Loader2, Wand2, Upload, X, FileText } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Loader2, Upload } from "lucide-react";
 
 interface AIImportModalProps {
   open: boolean;
@@ -11,19 +10,12 @@ interface AIImportModalProps {
 
 export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImportModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
-  };
-
-  const handleProcess = () => {
+  const startProcessing = () => {
     setIsProcessing(true);
     
-    // Simulação de 2 segundos conforme solicitado
+    // Simulação de 2 segundos de processamento por IA
     setTimeout(() => {
       const simulatedData = {
         name: "Hambúrguer Gourmet Especial",
@@ -47,100 +39,78 @@ export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImpor
       };
       
       setIsProcessing(false);
-      setFile(null);
       onProcessComplete(simulatedData);
     }, 2000);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <span className="text-lg">🪄</span> Importar Ficha Técnica (IA)
-          </DialogTitle>
-        </DialogHeader>
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      startProcessing();
+    }
+  };
 
-        <div className="py-6">
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      startProcessing();
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !isProcessing && onOpenChange(o)}>
+      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden border-none bg-slate-950 text-white shadow-2xl">
+        <div className="p-10 flex flex-col items-center justify-center text-center space-y-6">
           {isProcessing ? (
-            <div className="flex flex-col items-center justify-center py-10 space-y-4 animate-in fade-in duration-300">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <div className="text-center">
-                <p className="font-bold text-lg">Processando...</p>
-                <p className="text-sm text-muted-foreground">Analisando documento com IA...</p>
-                <p className="text-sm text-muted-foreground">Extraindo informações da receita...</p>
+            <div className="animate-in fade-in zoom-in duration-300 flex flex-col items-center space-y-6">
+              <div className="relative">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" strokeWidth={1.5} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
+                </div>
               </div>
+              
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold tracking-tight">Processando...</h2>
+                <p className="text-slate-400 text-sm">Analisando documento com IA...</p>
+              </div>
+              
+              <p className="text-primary/80 text-xs font-bold uppercase tracking-widest animate-pulse">
+                Extraindo informações da receita...
+              </p>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div 
-                className="border-2 border-dashed border-border rounded-2xl p-10 flex flex-col items-center justify-center gap-4 hover:bg-muted/50 transition-colors cursor-pointer group"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" 
-                  onChange={handleFileSelect}
-                />
-                {file ? (
-                  <div className="flex items-center gap-3 bg-primary/5 p-4 rounded-xl border border-primary/20 w-full">
-                    <FileText className="h-8 w-8 text-primary" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8" 
-                      onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="p-4 bg-primary/10 rounded-full group-hover:scale-110 transition-transform">
-                      <Upload className="h-8 w-8 text-primary" />
-                    </div>
-                    <div className="text-center">
-                      <p className="font-bold">Arraste ou selecione sua receita</p>
-                      <p className="text-xs text-muted-foreground mt-1">PDF, Imagem, Excel ou Word</p>
-                    </div>
-                  </>
-                )}
+            <div 
+              className="w-full space-y-6 cursor-pointer group"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+            >
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" 
+                onChange={handleFileSelect}
+              />
+              
+              <div className="mx-auto w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center group-hover:border-primary/50 group-hover:bg-slate-800 transition-all duration-300">
+                <Upload className="h-8 w-8 text-slate-400 group-hover:text-primary transition-colors" />
               </div>
-              <p className="text-xs text-center text-muted-foreground px-6">
-                A Inteligência Artificial preencherá a Ficha Técnica para você automaticamente.
+
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold">🪄 Importar Ficha Técnica</h2>
+                <p className="text-slate-400 text-sm px-4">
+                  Arraste ou selecione sua receita em <span className="text-white">PDF, Imagem, Excel ou Word</span>.
+                </p>
+              </div>
+
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                A IA preencherá tudo para você
               </p>
             </div>
           )}
         </div>
-
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleProcess} 
-            disabled={!file || isProcessing}
-            className={cn(
-              "min-w-[140px] transition-colors",
-              file && !isProcessing && "hover:bg-[#2dceb6] active:bg-[#2dceb6] focus:bg-[#2dceb6]"
-            )}
-            style={file && !isProcessing ? { backgroundColor: undefined } : {}}
-          >
-            {isProcessing ? "Lendo Arquivo..." : "Processar Arquivo"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
-
-// Helper function for conditional classes
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }
