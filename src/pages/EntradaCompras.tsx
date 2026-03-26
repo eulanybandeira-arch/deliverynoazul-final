@@ -15,7 +15,7 @@ import {
   History,
   Zap,
   ArrowRight
-} from "lucide-react";
+} from "lucide-center";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/pricing";
 import { ManualEntryModal } from "@/components/purchases/ManualEntryModal";
