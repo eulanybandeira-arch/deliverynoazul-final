@@ -18,6 +18,11 @@ const MOCK_INSUMOS = [
   { id: "i1", name: "Pão Brioche", unit: "un", unitPrice: 1.50 },
   { id: "i2", name: "Carne Bovina", unit: "kg", unitPrice: 35.00 },
   { id: "i3", name: "Queijo Cheddar", unit: "kg", unitPrice: 40.00 },
+  { id: "i4", name: "FILE DE PEITO DE FRANGO", unit: "kg", unitPrice: 14.99 },
+  { id: "i5", name: "CREME LEITE", unit: "g", unitPrice: 0.01 },
+  { id: "i6", name: "EXTRATO DE TOMATE", unit: "g", unitPrice: 0.01 },
+  { id: "i7", name: "LEITE INTEGRAL", unit: "L", unitPrice: 4.98 },
+  { id: "i8", name: "KETCHUP TRADICIONAL", unit: "kg", unitPrice: 15.98 },
 ];
 
 const MOCK_EMBALAGENS = [
@@ -34,6 +39,7 @@ const UNIT_OPTIONS = [
 interface RecipeItem {
   id: string;
   name: string;
+  mappedName?: string;
   quantity: number;
   unit: string;
   unitPrice: number;
@@ -330,7 +336,7 @@ export function RecipeFormModal({ open, onOpenChange, onSave, initialData }: Rec
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[90vh] p-0 flex flex-col gap-0 overflow-hidden border-none shadow-2xl">
-        {/* Banner de Alerta IA */}
+        {/* Banner de Alerta IA (Screenshot 7) */}
         {isAiProcessed && (
           <div className="bg-[#2dceb6]/10 border-b border-[#2dceb6]/20 p-3 px-6 flex items-center gap-3 animate-in slide-in-from-top duration-500">
             <div className="bg-[#2dceb6] rounded-full p-1">
