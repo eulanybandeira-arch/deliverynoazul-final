@@ -66,12 +66,12 @@ export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImpor
   return (
     <Dialog open={open} onOpenChange={(o) => { if(modalState !== "processing") { onOpenChange(o); if(!o) { setModalState("upload"); setExtractedData(null); } } }}>
       <DialogContent className={cn(
-        "p-0 overflow-hidden border-none shadow-2xl transition-all duration-300",
-        modalState === "processing" ? "sm:max-w-[400px] bg-slate-950 text-white" : "sm:max-w-[850px] bg-background"
+        "p-0 overflow-hidden border-none shadow-2xl transition-all duration-300 sm:max-w-[850px]",
+        modalState === "processing" ? "bg-slate-950 text-white" : "bg-background"
       )}>
         
         {modalState === "upload" && (
-          <div className="p-10 flex flex-col items-center justify-center text-center space-y-6">
+          <div className="p-20 flex flex-col items-center justify-center text-center space-y-6">
             <div className="w-full space-y-6 cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
               <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx" onChange={handleFileSelect} />
               <div className="mx-auto w-20 h-20 rounded-full bg-muted border border-border flex items-center justify-center group-hover:border-primary/50 group-hover:bg-accent transition-all duration-300">
@@ -86,7 +86,7 @@ export function AIImportModal({ open, onOpenChange, onProcessComplete }: AIImpor
         )}
 
         {modalState === "processing" && (
-          <div className="p-10 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-300">
+          <div className="p-20 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-300">
             <div className="relative">
               <Loader2 className="h-16 w-16 animate-spin text-primary" strokeWidth={1.5} />
               <div className="absolute inset-0 flex items-center justify-center">
