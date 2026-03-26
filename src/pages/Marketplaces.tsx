@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Settings2, 
   TrendingDown, 
@@ -13,11 +14,14 @@ import {
   UtensilsCrossed,
   Zap,
   Bike,
-  Percent,
-  DollarSign
+  FileDown,
+  ArrowRightLeft,
+  LayoutGrid,
+  ChefHat
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/pricing";
+import { toast } from "sonner";
 
 interface ChannelFees {
   id: string;
@@ -53,55 +57,63 @@ const MOCK_RECIPES = [
 export default function Marketplaces() {
   const [channels, setChannels] = useState<ChannelFees[]>(INITIAL_CHANNELS);
   const [selectedChannelId, setSelectedChannelId] = useState("ifood-entrega");
+  const [selectedRecipeId, setSelectedRecipeId] = useState("r1");
+  const [viewMode, setViewMode] = useState<"channel" | "recipe">("channel");
 
   const handleUpdateFee = (channelId: string, field: keyof ChannelFees, value: string) => {
     const numValue = parseFloat(value) || 0;
     setChannels(prev => prev.map(c => c.id === channelId ? { ...c, [field]: numValue } : c));
   };
 
-  const selectedChannel = useMemo(() => 
-    channels.find(c => c.id === selectedChannelId) || channels[0], 
-  [channels, selectedChannelId]);
+  const calculateErosion = (recipe: any, channel: ChannelFees) => {
+    let erosionValue = 0;
+    let feeLabel = "";
 
-  const analysisData = useMemo(() => {
-    return MOCK_RECIPES.map(recipe => {
-      let erosionValue = 0;
-      let feeLabel = "";
+    if (channel.type === 'salao') {
+      const totalPercent = channel.transactionFee + (channel.discounts || 0);
+      erosionValue = recipe.price * (totalPercent / 100);
+      feeLabel = `${totalPercent.toFixed(1)}% (Maquininha + Desc.)`;
+    } 
+    else if (channel.type === 'delivery-proprio') {
+      const gatewayErosion = recipe.price * (channel.transactionFee / 100);
+      const logisticsSubsidy = Math.max(0, (channel.motoboyCost || 0) - (channel.deliveryFeeCharged || 0));
+      erosionValue = gatewayErosion + logisticsSubsidy;
+      feeLabel = `${channel.transactionFee}% Gateway + ${formatCurrency(logisticsSubsidy)} Subsídio Frete`;
+    } 
+    else {
+      const totalPercent = (channel.baseCommission || 0) + channel.transactionFee + (channel.campaigns || 0);
+      erosionValue = recipe.price * (totalPercent / 100);
+      feeLabel = `${totalPercent.toFixed(1)}% em taxas`;
+    }
 
-      if (selectedChannel.type === 'salao') {
-        const totalPercent = selectedChannel.transactionFee + (selectedChannel.discounts || 0);
-        erosionValue = recipe.price * (totalPercent / 100);
-        feeLabel = `${totalPercent.toFixed(1)}% (Maquininha + Desc.)`;
-      } 
-      else if (selectedChannel.type === 'delivery-proprio') {
-        const gatewayErosion = recipe.price * (selectedChannel.transactionFee / 100);
-        const logisticsSubsidy = Math.max(0, (selectedChannel.motoboyCost || 0) - (selectedChannel.deliveryFeeCharged || 0));
-        erosionValue = gatewayErosion + logisticsSubsidy;
-        feeLabel = `${selectedChannel.transactionFee}% Gateway + ${formatCurrency(logisticsSubsidy)} Subsídio Frete`;
-      } 
-      else {
-        const totalPercent = (selectedChannel.baseCommission || 0) + selectedChannel.transactionFee + (selectedChannel.campaigns || 0);
-        erosionValue = recipe.price * (totalPercent / 100);
-        feeLabel = `${totalPercent.toFixed(1)}% em taxas`;
-      }
+    const contributionValue = recipe.price - recipe.cost - erosionValue;
+    const contributionPercent = (contributionValue / recipe.price) * 100;
 
-      const contributionValue = recipe.price - recipe.cost - erosionValue;
-      const contributionPercent = (contributionValue / recipe.price) * 100;
+    let bcg = { label: "Âncora", emoji: "⚓", color: "text-slate-500", bgColor: "bg-slate-500/10" };
+    if (contributionPercent > 35) bcg = { label: "Tesouro", emoji: "👑", color: "text-[#002B5B]", bgColor: "bg-[#002B5B]/10" };
+    else if (contributionPercent >= 15) bcg = { label: "Vela", emoji: "⛵", color: "text-blue-500", bgColor: "bg-blue-500/10" };
 
-      let bcg = { label: "Âncora", emoji: "⚓", color: "text-slate-500", bgColor: "bg-slate-500/10" };
-      if (contributionPercent > 35) bcg = { label: "Tesouro", emoji: "👑", color: "text-[#002B5B]", bgColor: "bg-[#002B5B]/10" };
-      else if (contributionPercent >= 15) bcg = { label: "Vela", emoji: "⛵", color: "text-blue-500", bgColor: "bg-blue-500/10" };
+    return { erosionValue, contributionValue, contributionPercent, bcg, feeLabel };
+  };
 
-      return {
-        ...recipe,
-        erosionValue,
-        contributionValue,
-        contributionPercent,
-        bcg,
-        feeLabel
-      };
-    });
-  }, [selectedChannel]);
+  const channelAnalysisData = useMemo(() => {
+    const channel = channels.find(c => c.id === selectedChannelId) || channels[0];
+    return MOCK_RECIPES.map(recipe => ({
+      ...recipe,
+      ...calculateErosion(recipe, channel)
+    }));
+  }, [channels, selectedChannelId]);
+
+  const recipeAnalysisData = useMemo(() => {
+    const recipe = MOCK_RECIPES.find(r => r.id === selectedRecipeId) || MOCK_RECIPES[0];
+    return channels.map(channel => ({
+      channelName: channel.name,
+      channelIcon: channel.icon,
+      price: recipe.price,
+      cost: recipe.cost,
+      ...calculateErosion(recipe, channel)
+    }));
+  }, [channels, selectedRecipeId]);
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-10">
@@ -110,7 +122,7 @@ export default function Marketplaces() {
         <p className="text-muted-foreground">Configure as taxas das plataformas e descubra a erosão real do seu lucro.</p>
       </header>
 
-      {/* SEÇÃO 1: SETUP DE TAXAS - GRID REESTRUTURADO */}
+      {/* SEÇÃO 1: SETUP DE TAXAS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {channels.map((channel) => (
           <Card key={channel.id} className="border-border/40 bg-white dark:bg-card/40 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col">
@@ -263,16 +275,49 @@ export default function Marketplaces() {
             <h2 className="text-xl font-bold text-foreground">Análise de Erosão por Canal</h2>
           </div>
 
-          <div className="flex items-center gap-3 bg-white dark:bg-card/40 backdrop-blur-sm p-2 rounded-2xl border border-border/40 shadow-sm">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3">Analisar cenário no canal:</span>
-            <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
-              <SelectTrigger className="w-[240px] h-9 border-none bg-slate-50/50 dark:bg-transparent focus:ring-0 font-bold text-primary">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2 font-bold text-xs uppercase tracking-wider border-border/60"
+            onClick={() => toast.success("Relatório PDF gerado com sucesso!")}
+          >
+            <FileDown className="h-4 w-4" /> Exportar Relatório (PDF)
+          </Button>
+        </div>
+
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-white dark:bg-card/40 backdrop-blur-sm p-3 rounded-2xl border border-border/40 shadow-sm">
+          <Tabs 
+            value={viewMode} 
+            onValueChange={(v: any) => setViewMode(v)} 
+            className="w-full lg:w-auto"
+          >
+            <TabsList className="grid w-full grid-cols-2 lg:w-[400px] bg-muted/50">
+              <TabsTrigger value="channel" className="gap-2 text-xs font-bold uppercase tracking-tighter">
+                <LayoutGrid className="h-3.5 w-3.5" /> Visão por Canal
+              </TabsTrigger>
+              <TabsTrigger value="recipe" className="gap-2 text-xs font-bold uppercase tracking-tighter">
+                <ChefHat className="h-3.5 w-3.5" /> Visão por Prato
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="flex items-center gap-3 w-full lg:w-auto">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 whitespace-nowrap">
+              {viewMode === "channel" ? "Analisar cenário no canal:" : "Selecione a Receita:"}
+            </span>
+            <Select 
+              value={viewMode === "channel" ? selectedChannelId : selectedRecipeId} 
+              onValueChange={viewMode === "channel" ? setSelectedChannelId : setSelectedRecipeId}
+            >
+              <SelectTrigger className="w-full lg:w-[280px] h-9 border-none bg-slate-50/50 dark:bg-transparent focus:ring-0 font-bold text-primary">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {channels.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
+                {viewMode === "channel" ? (
+                  channels.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)
+                ) : (
+                  MOCK_RECIPES.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -283,7 +328,9 @@ export default function Marketplaces() {
             <Table>
               <TableHeader className="bg-slate-50/80 dark:bg-muted/30">
                 <TableRow className="hover:bg-transparent border-b border-border/40">
-                  <TableHead className="text-[10px] font-bold uppercase py-5 pl-6 text-muted-foreground">Prato</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase py-5 pl-6 text-muted-foreground">
+                    {viewMode === "channel" ? "Prato" : "Canal de Venda"}
+                  </TableHead>
                   <TableHead className="text-[10px] font-bold uppercase text-right text-muted-foreground">Preço de Venda</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase text-right text-muted-foreground">Custo (CMV)</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase text-right text-destructive">Erosão do Canal</TableHead>
@@ -292,9 +339,18 @@ export default function Marketplaces() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {analysisData.map((item) => (
-                  <TableRow key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-muted/30 transition-colors border-b border-border/20">
-                    <TableCell className="py-5 pl-6 font-bold text-sm text-foreground">{item.name}</TableCell>
+                {(viewMode === "channel" ? channelAnalysisData : recipeAnalysisData).map((item, idx) => (
+                  <TableRow key={idx} className="hover:bg-slate-50/50 dark:hover:bg-muted/30 transition-colors border-b border-border/20">
+                    <TableCell className="py-5 pl-6 font-bold text-sm text-foreground">
+                      {viewMode === "channel" ? (
+                        item.name
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <item.channelIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                          {item.channelName}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right font-mono text-sm font-medium">{formatCurrency(item.price)}</TableCell>
                     <TableCell className="text-right font-mono text-sm text-muted-foreground">{formatCurrency(item.cost)}</TableCell>
                     <TableCell className="text-right">
@@ -330,8 +386,8 @@ export default function Marketplaces() {
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
             <span className="font-bold text-primary uppercase tracking-wider">Dica de Engenharia:</span> 
-            {selectedChannel.type === 'delivery-proprio' ? (
-              " No Delivery Próprio, a erosão oculta está no frete. Se o custo do motoboy é maior que a taxa cobrada, você está subsidiando a entrega com sua margem de lucro."
+            {viewMode === "recipe" ? (
+              " Compare as margens entre os canais. Se um prato é 'Tesouro' no Salão mas 'Âncora' no iFood, você precisa ajustar o preço dinâmico ou criar uma oferta exclusiva para proteger seu lucro."
             ) : (
               " Se um prato virou Âncora neste canal, considere aumentar o preço apenas nesta plataforma ou criar um combo exclusivo para diluir a erosão das taxas."
             )}
