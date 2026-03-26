@@ -67,7 +67,7 @@
     --muted: 222 47% 16%;
     --muted-foreground: 215 20% 65%;
     
-    /* Seleção Azul Suave no Dark Mode (conforme imagem) */
+    /* Seleção Azul Suave no Dark Mode */
     --accent: 211 100% 15%;
     --accent-foreground: 210 40% 98%;
     
@@ -97,7 +97,22 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Forçar cursor pointer em elementos clicáveis */
+  button, 
+  [role="button"],
+  a,
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply cursor-pointer;
+  }
+
+  /* Transições globais para interatividade */
+  button, a, .sidebar-item, .dropdown-item {
+    @apply transition-all duration-200 ease-in-out;
   }
 
   h1, h2 {
@@ -106,5 +121,13 @@
   
   .dark h1, .dark h2 {
     @apply text-white;
+  }
+}
+
+@layer components {
+  /* Melhoria visual para itens de menu e dropdowns */
+  .dropdown-content [role="menuitem"],
+  .select-content [role="option"] {
+    @apply cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground outline-none;
   }
 }

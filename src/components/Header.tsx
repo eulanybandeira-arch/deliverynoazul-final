@@ -31,7 +31,7 @@ export function Header() {
         <MobileSidebar />
         <a
           href="/dashboard"
-          className="flex items-center gap-2 font-semibold cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 font-semibold cursor-pointer hover:opacity-80 transition-all duration-200"
           aria-label="Ir para o dashboard"
         >
           <img src={`/logo.png?t=${new Date().getTime()}`} alt="Logo" className="h-8 w-8" />
@@ -52,7 +52,7 @@ export function Header() {
             <Input
               type="search"
               placeholder="Buscar..."
-              className="h-8 w-[200px]"
+              className="h-8 w-[200px] focus-visible:ring-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -61,7 +61,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 hover:bg-accent transition-colors"
               onClick={() => {
                 setSearchOpen(false);
                 setSearchTerm("");
@@ -74,7 +74,7 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-accent transition-colors"
             aria-label="Buscar"
             onClick={() => setSearchOpen(true)}
           >
