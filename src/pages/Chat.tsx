@@ -3,11 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  Send, Bot, User, Loader2, Trash2, TrendingUp, AlertTriangle, 
-  HelpCircle, Paperclip, X, Image as ImageIcon, ChefHat, Plus,
-  MessageSquare, Clock, ChevronRight
+  Send, Bot, User, Loader2, Trash2, Paperclip, X, 
+  Image as ImageIcon, Plus, MessageSquare, Clock
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,11 +31,6 @@ interface ChatSession {
   date: string;
 }
 
-interface RecipeForAnalysis {
-  id: string;
-  name: string;
-}
-
 interface UserContext {
   recipes: { total: number; lowMargin: any[] } | null;
   inventory: { total: number; lowStock: any[] } | null;
@@ -46,12 +39,6 @@ interface UserContext {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-
-const QUICK_SUGGESTIONS = [
-  { label: "Análise do Lucro", icon: TrendingUp, message: "Quero analisar meu lucro. Me ajude a escolher o período: posso ver por dia específico, semana, quinzena ou mês?" },
-  { label: "Alertas de Preço", icon: AlertTriangle, message: "Quais insumos estão com preço alto ou estoque baixo? Me alerte sobre possíveis prejuízos." },
-  { label: "Como precificar?", icon: HelpCircle, message: "Me explique como devo precificar meus produtos para garantir lucro. Quais fatores devo considerar?" },
-];
 
 export default function Chat() {
   const { user } = useAuth();
@@ -67,8 +54,6 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [recipesForAnalysis, setRecipesForAnalysis] = useState<RecipeForAnalysis[]>([]);
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string>("");
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,17 +72,8 @@ export default function Chat() {
   useEffect(() => {
     if (user) {
       fetchUserContext();
-      fetchRecipesForAnalysis();
     }
   }, [user]);
-
-  const fetchRecipesForAnalysis = async () => {
-    const { data } = await supabase
-      .from("recipes")
-      .select("id, name")
-      .order("name");
-    setRecipesForAnalysis(data || []);
-  };
 
   const fetchUserContext = async () => {
     try {
@@ -420,11 +396,6 @@ export default function Chat() {
     }
   };
 
-  const handleQuickSuggestion = (message: string) => {
-    if (isLoading) return;
-    streamChat(message);
-  };
-
   if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -485,64 +456,20 @@ export default function Chat() {
 
         {/* COLUNA DIREITA: CHAT ATIVO */}
         <div className="flex-1 flex flex-col bg-background relative">
-          {/* Header do Chat com Atalhos e Dropdown */}
-          <div className="p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 bg-background/50 backdrop-blur-sm z-10">
-            <div className="flex flex-wrap items-center gap-2">
-              {QUICK_SUGGESTIONS.map((suggestion, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-[11px] font-bold uppercase tracking-wider gap-2 border-primary/20 text-primary hover:bg-primary/5"
-                  onClick={() => handleQuickSuggestion(suggestion.message)}
-                >
-                  <suggestion.icon className="h-3.5 w-3.5" />
-                  {suggestion.label}
-                </Button>
-              ))}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {recipesForAnalysis.length > 0 && (
-                <Select 
-                  value={selectedRecipeId} 
-                  onValueChange={(value) => {
-                    setSelectedRecipeId(value);
-                    const recipe = recipesForAnalysis.find(r => r.id === value);
-                    if (recipe) {
-                      streamChat(`Analise detalhadamente a receita "${recipe.name}" com todos os custos, margens e sugestões de melhoria.`, undefined, value);
-                      setSelectedRecipeId("");
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-[220px] h-8 text-xs gap-2 border-dashed bg-muted/30">
-                    <ChefHat className="h-3.5 w-3.5" />
-                    <SelectValue placeholder="Analisar uma receita..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {recipesForAnalysis.map((recipe) => (
-                      <SelectItem key={recipe.id} value={recipe.id}>{recipe.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </div>
-
           {/* Área de Mensagens */}
           <ScrollArea className="flex-1 p-4 md:p-8" ref={scrollRef}>
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-2 max-w-2xl mx-auto pt-12">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">
-                  sua gestão no automático. seu negócio noazul.
+                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                  Sua gestão no automático. Seu negócio noazul
                 </p>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-primary">
                   Olá, {userName}
                 </h1>
-                <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                  Sou a Lucra, Consultora de Inteligência do Sistema Deliverynoazul. Estou aqui para te ajudar a aumentar seu Lucro Real e blindar sua margem. Use os atalhos acima ou me pergunte qualquer coisa sobre seu negócio.
+                <p className="text-muted-foreground text-lg font-light leading-relaxed mb-6">
+                  Me pergunte qualquer coisa sobre seu negócio.
                 </p>
-                <p className="text-xl font-bold text-foreground">
+                <p className="text-xl text-foreground">
                   Por onde começamos?
                 </p>
               </div>
@@ -666,7 +593,7 @@ export default function Chat() {
                 </Button>
               </form>
               <p className="text-[10px] text-center text-muted-foreground mt-3 uppercase tracking-widest font-bold opacity-60">
-                Lucra AI • Inteligência Financeira para Restaurantes e Deliveries
+                Lucra AI • Inteligência Financeira do sistema deliverynoazul para Restaurantes e Deliveries
               </p>
             </div>
           </div>
