@@ -6,7 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Edit, Trash2, Search, MoreVertical, ChefHat, Sparkles, TrendingUp, DollarSign, Target, Zap } from "lucide-react";
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Search, 
+  MoreVertical, 
+  ChefHat, 
+  Sparkles, 
+  FileText,
+  Printer,
+  CheckCircle2
+} from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { formatCurrency } from "@/utils/pricing";
 import { cn } from "@/lib/utils";
 import { RecipeFormModal } from "@/components/recipes/RecipeFormModal";
@@ -46,7 +63,6 @@ export default function Receitas() {
     );
   }, [recipesList, searchTerm]);
 
-  // Métricas para os Cards BCG
   const bcgStats = useMemo(() => {
     return {
       tesouros: recipesList.filter(r => r.status.label === "Tesouro").length,
@@ -68,11 +84,20 @@ export default function Receitas() {
     setIsModalOpen(false);
   };
 
+  const handleDelete = (id: string) => {
+    setRecipesList(prev => prev.filter(r => r.id !== id));
+    toast.error("Receita removida.");
+  };
+
+  const handleExportPDF = (recipe: any) => {
+    toast.success(`Gerando PDF de ${recipe.name}...`);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 w-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Fichas Técnicas & Engenharia de Cardápio</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Fichas Técnicas & Engenharia</h1>
           <p className="text-muted-foreground">Descubra os pratos que são tesouros e corte as âncoras que afundam o seu cardápio.</p>
         </div>
         <div className="flex items-center gap-3">
@@ -85,7 +110,6 @@ export default function Receitas() {
         </div>
       </div>
 
-      {/* MATRIZ BCG - CARDS ESTRATÉGICOS PADRONIZADOS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardContent className="p-4 flex items-center gap-4">
@@ -93,7 +117,6 @@ export default function Receitas() {
             <div>
               <p className="text-sm font-bold text-primary">Tesouro</p>
               <p className="text-2xl font-black text-primary">{bcgStats.tesouros}</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">Os queridinhos. Vendem muito e margem alta.</p>
             </div>
           </CardContent>
         </Card>
@@ -103,7 +126,6 @@ export default function Receitas() {
             <div>
               <p className="text-sm font-bold text-primary">Vela</p>
               <p className="text-2xl font-black text-primary">{bcgStats.velas}</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">Sustentam o volume. Alta saída, margem apertada.</p>
             </div>
           </CardContent>
         </Card>
@@ -111,9 +133,8 @@ export default function Receitas() {
           <CardContent className="p-4 flex items-center gap-4">
             <div className="text-3xl">🦪</div>
             <div>
-              <p className="text-sm font-bold text-primary">Pérola Escondida</p>
+              <p className="text-sm font-bold text-primary">Pérola</p>
               <p className="text-2xl font-black text-primary">{bcgStats.perolas}</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">Ouro não explorado. Margem alta, saída baixa.</p>
             </div>
           </CardContent>
         </Card>
@@ -123,7 +144,6 @@ export default function Receitas() {
             <div>
               <p className="text-sm font-bold text-primary">Âncora</p>
               <p className="text-2xl font-black text-primary">{bcgStats.ancoras}</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">Pesos mortos. Baixa saída e margem ruim.</p>
             </div>
           </CardContent>
         </Card>
@@ -149,7 +169,7 @@ export default function Receitas() {
             </TableHeader>
             <TableBody>
               {filteredRecipes.map((recipe) => (
-                <TableRow key={recipe.id} className="hover:bg-muted/30 transition-colors border-b border-border/20 cursor-pointer group" onClick={() => { setEditingRecipe(recipe); setModalMode("manual"); setIsModalOpen(true); }}>
+                <TableRow key={recipe.id} className="hover:bg-muted/30 transition-colors border-b border-border/20 group">
                   <TableCell className="py-4 pl-6">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10 border border-border/50">
@@ -161,7 +181,24 @@ export default function Receitas() {
                   </TableCell>
                   <TableCell className="text-center"><span className="text-xl" title={recipe.status.label}>{recipe.status.emoji}</span></TableCell>
                   <TableCell className="text-right font-mono text-sm font-bold">{formatCurrency(parseFloat(recipe.appliedPrice || "0") / 100)}</TableCell>
-                  <TableCell className="text-right pr-6"><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></TableCell>
+                  <TableCell className="text-right pr-6">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => { setEditingRecipe(recipe); setModalMode("manual"); setIsModalOpen(true); }}>
+                          <Edit className="h-4 w-4 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExportPDF(recipe)}>
+                          <FileText className="h-4 w-4 mr-2" /> Gerar PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(recipe.id)} className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
