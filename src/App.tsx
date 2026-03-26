@@ -10,6 +10,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Compras from "./pages/Compras";
+import EntradaCompras from "./pages/EntradaCompras";
 import Inventario from "./pages/Inventario";
 import ListaCompras from "./pages/ListaCompras";
 import Fornecedores from "./pages/Fornecedores";
@@ -61,6 +62,7 @@ const App = () => (
             <Route element={<ProtectedLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/compras" element={<Compras />} />
+              <Route path="/entrada-compras" element={<EntradaCompras />} />
               <Route path="/inventario" element={<Inventario />} />
               <Route path="/lista-compras" element={<ListaCompras />} />
               <Route path="/fornecedores" element={<Fornecedores />} />

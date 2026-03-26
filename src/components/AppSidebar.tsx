@@ -10,7 +10,8 @@ import {
   MessageSquare, 
   Settings, 
   Lock,
-  Store
+  Store,
+  FilePlus
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -99,7 +100,8 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {renderMenuItem({ title: "Cadastro de Insumos", url: "/compras", icon: ShoppingCart })}
+              {renderMenuItem({ title: "Entrada de Compras", url: "/entrada-compras", icon: FilePlus })}
+              {renderMenuItem({ title: "Banco de Insumos", url: "/compras", icon: ShoppingCart })}
               {renderMenuItem({ title: "Fornecedores", url: "/fornecedores", icon: Truck })}
               {renderMenuItem({ title: "Inventário & Auditoria", url: "/inventario", icon: ClipboardCheck })}
               {renderMenuItem({ title: "Lista de Compras", url: "/lista-compras", icon: ShoppingCart })}
