@@ -5,66 +5,89 @@ import { ScannerModal } from "@/components/inventory/ScannerModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Filter, Package, Camera } from "lucide-react";
+import { Search, Plus, Filter, Package, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-const MOCK_INSUMOS: Insumo[] = [
-  { id: "1", name: "Picanha Argentina", category: "Carnes", purchaseUnit: "Peça 1.5kg", stockUnit: "kg", yieldFactor: 85, avgCostUE: 89.90, isActiveCMV: true },
-  { id: "2", name: "Tomate Italiano", category: "Hortifruti", purchaseUnit: "Caixa 20kg", stockUnit: "kg", yieldFactor: 92, avgCostUE: 6.50, isActiveCMV: true },
-  { id: "3", name: "Queijo Mussarela", category: "Laticínios", purchaseUnit: "Peça 4kg", stockUnit: "kg", yieldFactor: 100, avgCostUE: 42.00, isActiveCMV: true },
-  { id: "4", name: "Arroz Agulhinha T1", category: "Secos", purchaseUnit: "Fardo 30kg", stockUnit: "kg", yieldFactor: 100, avgCostUE: 5.80, isActiveCMV: true },
-  { id: "5", name: "Detergente Neutro", category: "Limpeza", purchaseUnit: "Galão 5L", stockUnit: "L", yieldFactor: 100, avgCostUE: 14.50, isActiveCMV: false },
-  { id: "6", name: "Embalagem Burger G", category: "Embalagens", purchaseUnit: "Cento", stockUnit: "un", yieldFactor: 100, avgCostUE: 0.85, isActiveCMV: true },
-];
+import { useInventory } from "@/hooks/useInventory";
 
 export default function Compras() {
-  const [insumos, setInsumos] = useState(MOCK_INSUMOS);
+  const { items, loading, addItem, updateItem, deleteItem } = useInventory();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
-  
-  // Estado para controlar qual ação está em evidência (azul sólido)
   const [activeAction, setActiveAction] = useState<"scanner" | "manual">("scanner");
 
+  const mappedInsumos: Insumo[] = useMemo(() => {
+    return items.map(item => ({
+      id: item.id,
+      name: item.name,
+      category: item.category_logistics || "Outros",
+      purchaseUnit: item.purchase_unit,
+      stockUnit: item.stock_unit,
+      yieldFactor: 100 - (item.loss || 0),
+      avgCostUE: item.cost_per_stock_unit || 0,
+      isActiveCMV: true
+    }));
+  }, [items]);
+
   const filteredInsumos = useMemo(() => {
-    return insumos.filter(i => {
+    return mappedInsumos.filter(i => {
       const matchesSearch = i.name.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === "all" || i.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });
-  }, [insumos, search, categoryFilter]);
+  }, [mappedInsumos, search, categoryFilter]);
 
-  const handleSaveInsumo = (data: Partial<Insumo>) => {
+  const handleSaveInsumo = async (data: Partial<Insumo>) => {
     if (editingInsumo) {
-      setInsumos(prev => prev.map(i => i.id === editingInsumo.id ? { ...i, ...data } as Insumo : i));
-      toast.success("Insumo atualizado!");
+      const success = await updateItem(editingInsumo.id, {
+        name: data.name,
+        category_logistics: data.category,
+        purchase_unit: data.purchaseUnit,
+        stock_unit: data.stockUnit,
+        loss: 100 - (data.yieldFactor || 100)
+      });
+      if (success) toast.success("Insumo atualizado!");
     } else {
-      const newInsumo: Insumo = {
-        ...data,
-        id: Math.random().toString(36).substr(2, 9),
-        avgCostUE: data.avgCostUE || 0,
-      } as Insumo;
-      setInsumos(prev => [newInsumo, ...prev]);
-      toast.success("Novo insumo cadastrado!");
+      const result = await addItem({
+        name: data.name || "",
+        purchase_unit: data.purchaseUnit || "un",
+        stock_unit: data.stockUnit || "un",
+        conversion_factor: 1,
+        cost_per_stock_unit: data.avgCostUE || 0,
+        category_logistics: data.category || "Outros",
+        unit_cost: data.avgCostUE || 0,
+        total_cost: data.avgCostUE || 0,
+        quantity_purchased: 1,
+        current_stock: 1,
+        min_alert_level: 0,
+        min_alert_unit: data.stockUnit || "un",
+        loss: 100 - (data.yieldFactor || 100)
+      });
+      if (result) toast.success("Novo insumo cadastrado!");
     }
     setEditingInsumo(null);
   };
 
-  const handleScannerSave = (scannedItems: any[]) => {
-    const newInsumos = scannedItems.map(item => ({
-      id: item.id,
-      name: item.name,
-      category: "Secos",
-      purchaseUnit: `${item.quantity}${item.unit}`,
-      stockUnit: item.unit,
-      yieldFactor: 100,
-      avgCostUE: item.price,
-      isActiveCMV: true,
-    }));
-    setInsumos(prev => [...newInsumos, ...prev]);
-    toast.success(`${newInsumos.length} insumos importados!`);
+  const handleScannerSave = async (scannedItems: any[]) => {
+    for (const item of scannedItems) {
+      await addItem({
+        name: item.name,
+        purchase_unit: item.unit,
+        stock_unit: item.unit,
+        conversion_factor: 1,
+        cost_per_stock_unit: item.price,
+        category_logistics: "Secos",
+        unit_cost: item.price,
+        total_cost: item.price * item.quantity,
+        quantity_purchased: item.quantity,
+        current_stock: item.quantity,
+        min_alert_level: 0,
+        min_alert_unit: item.unit
+      });
+    }
+    toast.success(`${scannedItems.length} insumos importados!`);
   };
 
   const handleEdit = (insumo: Insumo) => {
@@ -73,10 +96,18 @@ export default function Compras() {
     setIsFormModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setInsumos(prev => prev.filter(i => i.id !== id));
-    toast.error("Insumo removido.");
+  const handleDelete = async (id: string) => {
+    const success = await deleteItem(id);
+    if (success) toast.error("Insumo removido.");
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -84,13 +115,9 @@ export default function Compras() {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-primary">
             <Package className="h-6 w-6" />
-            <h1 className="text-3xl font-bold tracking-tight">
-              Banco de Insumos
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Banco de Insumos</h1>
           </div>
-          <p className="text-muted-foreground">
-            Gerencie a base do seu CMV e organize suas fichas técnicas.
-          </p>
+          <p className="text-muted-foreground">Gerencie a base do seu CMV e organize suas fichas técnicas.</p>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -102,8 +129,7 @@ export default function Compras() {
               setIsScannerModalOpen(true);
             }}
           >
-            <Camera className="h-4 w-4" />
-            Scanner de Notas/Listas
+            <Camera className="h-4 w-4" /> Scanner de Notas/Listas
           </Button>
           <Button 
             variant={activeAction === "manual" ? "default" : "outline"}
@@ -114,8 +140,7 @@ export default function Compras() {
               setIsFormModalOpen(true);
             }}
           >
-            <Plus className="h-4 w-4" />
-            Adicionar Manualmente
+            <Plus className="h-4 w-4" /> Adicionar Manualmente
           </Button>
         </div>
       </div>
@@ -148,11 +173,7 @@ export default function Compras() {
         </div>
       </div>
 
-      <InsumoTable 
-        data={filteredInsumos} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete} 
-      />
+      <InsumoTable data={filteredInsumos} onEdit={handleEdit} onDelete={handleDelete} />
 
       <InsumoFormModal 
         open={isFormModalOpen} 

@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, CheckCircle2, Search, TrendingUp, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Search, TrendingUp, AlertTriangle, Loader2 } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useSuppliers";
+import { useStockMovements } from "@/hooks/useStockMovements";
 import { formatCurrency } from "@/utils/pricing";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -36,18 +37,17 @@ interface EntryItem {
 }
 
 export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) {
-  const { items: inventoryItems } = useInventory();
+  const { items: inventoryItems, updateItem } = useInventory();
   const { suppliers } = useSuppliers();
+  const { addMovement } = useStockMovements();
   
   const [supplierId, setSupplierId] = useState("");
   const [entryDate, setEntryDate] = useState<Date | undefined>(new Date());
-  
   const [items, setItems] = useState<EntryItem[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   
-  // Form state for the active row
   const [currentInsumoId, setCurrentInsumoId] = useState("");
   const [currentQty, setCurrentQty] = useState("");
-  const [currentUnit, setCurrentUnit] = useState("un");
   const [currentTotal, setCurrentTotal] = useState("");
 
   const totalInvoice = useMemo(() => items.reduce((sum, item) => sum + item.totalValue, 0), [items]);
@@ -63,7 +63,6 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
     const total = parseFloat(currentTotal);
     const unitPrice = total / qty;
 
-    // Simulated Insight Logic
     let insight: EntryItem['insight'] = { text: "Preço estável", type: 'neutral' };
     if (insumo.unit_cost && unitPrice > insumo.unit_cost * 1.05) {
       const diff = ((unitPrice / insumo.unit_cost - 1) * 100).toFixed(0);
@@ -77,7 +76,7 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
       insumoId: insumo.id,
       name: insumo.name,
       quantity: qty,
-      unit: currentUnit,
+      unit: insumo.purchase_unit || "un",
       totalValue: total,
       insight
     };
@@ -92,16 +91,50 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
     setItems(items.filter(i => i.id !== id));
   };
 
-  const handleFinalize = () => {
+  const handleFinalize = async () => {
     if (items.length === 0) {
       toast.error("Adicione pelo menos um item.");
       return;
     }
-    toast.success("Entrada finalizada!", {
-      description: `${items.length} itens adicionados ao estoque e CMV atualizado.`
-    });
-    onOpenChange(false);
-    setItems([]);
+
+    setIsSaving(true);
+    try {
+      for (const item of items) {
+        const insumo = inventoryItems.find(i => i.id === item.insumoId);
+        if (!insumo) continue;
+
+        const newQty = (insumo.current_stock || 0) + (item.quantity * (insumo.conversion_factor || 1));
+        const newUnitCost = item.totalValue / item.quantity;
+
+        await updateItem(item.insumoId, {
+          current_stock: newQty,
+          unit_cost: newUnitCost,
+          total_cost: item.totalValue,
+          quantity_purchased: item.quantity,
+          purchase_date: entryDate?.toISOString().split('T')[0]
+        });
+
+        await addMovement({
+          inventory_item_id: item.insumoId,
+          movement_type: 'compra',
+          quantity: item.quantity * (insumo.conversion_factor || 1),
+          previous_stock: insumo.current_stock || 0,
+          new_stock: newQty,
+          notes: `Entrada manual - Nota Fiscal`
+        });
+      }
+
+      toast.success("Entrada finalizada!", {
+        description: `${items.length} itens adicionados ao estoque e CMV atualizado.`
+      });
+      onOpenChange(false);
+      setItems([]);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao processar entrada.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -140,10 +173,7 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
                     {entryDate ? format(entryDate, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione uma data</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent 
-                  className="p-0 w-[var(--radix-popover-trigger-width)]" 
-                  align="start"
-                >
+                <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
                   <Calendar
                     mode="single"
                     selected={entryDate}
@@ -169,7 +199,6 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
         </div>
 
         <div className="p-6 space-y-8">
-          {/* Linha de Entrada Ativa */}
           <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 shadow-inner">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
               <div className="md:col-span-2 space-y-2">
@@ -211,7 +240,6 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
             </div>
           </div>
 
-          {/* Lista de Itens */}
           <div className="rounded-xl border border-border/50 overflow-hidden bg-card">
             <Table>
               <TableHeader className="bg-muted/30">
@@ -271,8 +299,9 @@ export function ManualEntryModal({ open, onOpenChange }: ManualEntryModalProps) 
           </div>
           <div className="flex gap-3 w-full md:w-auto">
             <Button variant="ghost" onClick={() => onOpenChange(false)} className="font-bold">Cancelar</Button>
-            <Button onClick={handleFinalize} className="bg-primary hover:bg-primary/90 font-bold px-8 h-12 shadow-lg shadow-primary/20">
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Finalizar e Atualizar Estoque
+            <Button onClick={handleFinalize} disabled={isSaving} className="bg-primary hover:bg-primary/90 font-bold px-8 h-12 shadow-lg shadow-primary/20">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+              Finalizar e Atualizar Estoque
             </Button>
           </div>
         </div>
